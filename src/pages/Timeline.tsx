@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -14,7 +13,9 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft, Loader2, RefreshCw } from 'lucide-react';
 import { Commit, TimelineFilters, TimeScale, GroupBy } from '@/types';
 import { filterCommits } from '@/utils/filter-utils';
-import { fetchCommitsForRepo, extractRepoNameFromUrl } from '@/lib/supabase';
+import { fetchCommitsForRepo } from '@/lib/supabase';
+import { useChat } from '@/contexts/chat-context';
+import { ChatProvider } from '@/contexts/chat-context';
 
 const mockCommits: Commit[] = [
   {
@@ -244,7 +245,7 @@ const mockCommits: Commit[] = [
   }
 ];
 
-const TimelinePage: React.FC = () => {
+const TimelineContent: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [commits, setCommits] = useState<Commit[]>([]);
   const [filteredCommits, setFilteredCommits] = useState<Commit[]>([]);
@@ -263,44 +264,41 @@ const TimelinePage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const repoParam = searchParams.get('repo');
   const exampleParam = searchParams.get('example');
+  const { filteredCommitShas } = useChat();
   
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        // Check if we have a repository parameter
         if (repoParam) {
           console.log('Fetching data for repo:', repoParam, 'example:', exampleParam);
           
           try {
-            // First check if there's actual data in Supabase for this repo
-            const repoData = await fetchCommitsForRepo(repoParam);
-            
-            if (repoData && repoData.length > 0) {
-              console.log('Found real data in Supabase for repo:', repoParam);
-              setCommits(repoData);
-              toast.success(`Loaded ${repoData.length} commits for ${repoParam}`);
-            } 
-            // Only use example data if explicitly requested or no data found
-            else if (exampleParam === 'true') {
-              console.log('Using example data as requested for repo:', repoParam);
-              await new Promise(resolve => setTimeout(resolve, 1500));
-              setCommits(mockCommits);
-              toast.info('Showing example data for this repository', {
-                description: 'The actual analysis will be available soon.',
-              });
-            } else {
-              // No data found, show empty state
-              console.log('No data found in Supabase for repo:', repoParam);
-              setCommits([]);
-              toast.warning('No commit data found for this repository', {
-                description: 'Please try analyzing the repository again.',
-              });
+            if (repoParam) {
+              const repoData = await fetchCommitsForRepo(repoParam);
+              
+              if (repoData && repoData.length > 0) {
+                console.log('Found real data in Supabase for repo:', repoParam);
+                setCommits(repoData);
+                toast.success(`Loaded ${repoData.length} commits for ${repoParam}`);
+              } else if (exampleParam === 'true') {
+                console.log('Using example data as requested for repo:', repoParam);
+                await new Promise(resolve => setTimeout(resolve, 1500));
+                setCommits(mockCommits);
+                toast.info('Showing example data for this repository', {
+                  description: 'The actual analysis will be available soon.',
+                });
+              } else {
+                console.log('No data found in Supabase for repo:', repoParam);
+                setCommits([]);
+                toast.warning('No commit data found for this repository', {
+                  description: 'Please try analyzing the repository again.',
+                });
+              }
             }
           } catch (error) {
             console.error('Error fetching commits from Supabase:', error);
             if (exampleParam === 'true') {
-              // Fallback to example data if there was an error
               setCommits(mockCommits);
               toast.info('Showing example data for this repository', {
                 description: 'The actual analysis will be available soon.',
@@ -313,7 +311,6 @@ const TimelinePage: React.FC = () => {
             }
           }
         } else {
-          // No repo parameter, show example data
           await new Promise(resolve => setTimeout(resolve, 1500));
           setCommits(mockCommits);
           toast.info('Showing example timeline data', {
@@ -335,26 +332,28 @@ const TimelinePage: React.FC = () => {
   }, [repoParam, exampleParam]);
   
   useEffect(() => {
-    setFilteredCommits(filterCommits(commits, filters));
-  }, [commits, filters]);
+    let filtered = filterCommits(commits, filters);
+    
+    if (filteredCommitShas && filteredCommitShas.length > 0) {
+      filtered = filtered.filter(commit => filteredCommitShas.includes(commit.sha));
+    }
+    
+    setFilteredCommits(filtered);
+  }, [commits, filters, filteredCommitShas]);
   
   const handleRepositorySubmit = async (url: string, repoName: string, repoExists = false) => {
     setIsLoading(true);
     try {
       console.log('Handling repository submit:', repoName, 'exists:', repoExists);
       
-      // First check if we already have data for this repo
       if (repoExists) {
         console.log('Repository already exists in Supabase, navigating...');
-        // If repo exists, navigate directly to timeline with the repo parameter only
         navigate(`/timeline?repo=${encodeURIComponent(repoName)}`);
         
         toast.success('Repository data found!', {
           description: 'Loading timeline from existing data.',
         });
       } else {
-        // If repo doesn't exist, we would normally start analysis
-        // For now, navigate with example=true as a placeholder
         console.log('Repository not found in Supabase, showing example data...');
         await new Promise(resolve => setTimeout(resolve, 2000));
         
@@ -392,14 +391,12 @@ const TimelinePage: React.FC = () => {
     setIsLoading(true);
     try {
       console.log('Refreshing analysis for repo:', repoParam);
-      // In a real scenario, this would trigger a backend process
       await new Promise(resolve => setTimeout(resolve, 2000));
       
       toast.success('Analysis refreshed successfully!', {
         description: 'New commits have been analyzed.',
       });
       
-      // Reload the current page to get fresh data
       window.location.reload();
     } catch (error) {
       console.error('Error refreshing analysis:', error);
@@ -415,7 +412,6 @@ const TimelinePage: React.FC = () => {
     ? commits.find(commit => commit.sha === selectedCommit)
     : undefined;
 
-  // Show chat button only when we have commit data
   const showChatButton = commits.length > 0;
 
   return (
@@ -464,72 +460,77 @@ const TimelinePage: React.FC = () => {
         ) : (
           <>
             {filteredCommits.length > 0 ? (
-              <>
-                <FilterBar 
-                  commits={commits}
-                  filters={filters}
-                  onFilterChange={setFilters}
-                  timeScale={timeScale}
-                  onTimeScaleChange={setTimeScale}
-                  groupBy={groupBy}
-                  onGroupByChange={setGroupBy}
-                />
-                
-                <Timeline 
-                  commits={filteredCommits}
-                  timeScale={timeScale}
-                  groupBy={groupBy}
-                  selectedCommit={selectedCommit}
-                  onCommitSelect={handleCommitSelect}
-                  className="mb-10 animate-scale-in"
-                />
-                
-                {selectedCommitData && (
-                  <div className="mt-8 animation-delay-200 animate-fade-in">
-                    <h2 className="text-xl font-semibold mb-4">Selected Commit</h2>
-                    <CommitCard 
-                      id={`commit-${selectedCommitData.sha}`}
-                      commit={selectedCommitData}
-                      isExpanded={expandedCommit === selectedCommitData.sha}
-                      onToggleExpand={() => {
-                        if (expandedCommit === selectedCommitData.sha) {
-                          setExpandedCommit(undefined);
-                        } else {
-                          setExpandedCommit(selectedCommitData.sha);
-                        }
-                      }}
-                    />
-                  </div>
-                )}
-                
-                <div className="mt-8">
-                  <h2 className="text-xl font-semibold mb-4">Recent Commits</h2>
-                  <div className="grid grid-cols-1 gap-4 animation-delay-300 animate-fade-in">
-                    {filteredCommits.slice(0, 5).map((commit) => (
+              <div className="flex flex-col md:flex-row gap-6 relative">
+                <div className="flex-1">
+                  <FilterBar 
+                    commits={commits}
+                    filters={filters}
+                    onFilterChange={setFilters}
+                    timeScale={timeScale}
+                    onTimeScaleChange={setTimeScale}
+                    groupBy={groupBy}
+                    onGroupByChange={setGroupBy}
+                  />
+                  
+                  <Timeline 
+                    commits={filteredCommits}
+                    timeScale={timeScale}
+                    groupBy={groupBy}
+                    selectedCommit={selectedCommit}
+                    onCommitSelect={handleCommitSelect}
+                    className="mb-10 animate-scale-in"
+                  />
+                  
+                  {selectedCommitData && (
+                    <div className="mt-8 animation-delay-200 animate-fade-in">
+                      <h2 className="text-xl font-semibold mb-4">Selected Commit</h2>
                       <CommitCard 
-                        key={commit.sha}
-                        id={`commit-${commit.sha}`}
-                        commit={commit}
-                        isExpanded={expandedCommit === commit.sha}
+                        id={`commit-${selectedCommitData.sha}`}
+                        commit={selectedCommitData}
+                        isExpanded={expandedCommit === selectedCommitData.sha}
                         onToggleExpand={() => {
-                          if (expandedCommit === commit.sha) {
+                          if (expandedCommit === selectedCommitData.sha) {
                             setExpandedCommit(undefined);
                           } else {
-                            setExpandedCommit(commit.sha);
+                            setExpandedCommit(selectedCommitData.sha);
                           }
                         }}
-                        className={selectedCommit === commit.sha ? 'ring-2 ring-primary' : ''}
                       />
-                    ))}
+                    </div>
+                  )}
+                  
+                  <div className="mt-8">
+                    <h2 className="text-xl font-semibold mb-4">Recent Commits</h2>
+                    <div className="grid grid-cols-1 gap-4 animation-delay-300 animate-fade-in">
+                      {filteredCommits.slice(0, 5).map((commit) => (
+                        <CommitCard 
+                          key={commit.sha}
+                          id={`commit-${commit.sha}`}
+                          commit={commit}
+                          isExpanded={expandedCommit === commit.sha}
+                          onToggleExpand={() => {
+                            if (expandedCommit === commit.sha) {
+                              setExpandedCommit(undefined);
+                            } else {
+                              setExpandedCommit(commit.sha);
+                            }
+                          }}
+                          className={selectedCommit === commit.sha ? 'ring-2 ring-primary' : ''}
+                        />
+                      ))}
+                    </div>
                   </div>
                 </div>
-              </>
+                
+                <div className="w-96 hidden md:block shrink-0" />
+              </div>
             ) : (
               <div className="text-center py-12">
                 <p className="text-muted-foreground mb-4">No commits match your current filters.</p>
                 <Button variant="outline" onClick={() => setFilters({
                   types: [],
                   authors: [],
+                  epics: [],
                   dateRange: { from: null, to: null },
                   searchTerm: ''
                 })}>
@@ -547,6 +548,14 @@ const TimelinePage: React.FC = () => {
       
       <Footer />
     </div>
+  );
+};
+
+const TimelinePage: React.FC = () => {
+  return (
+    <ChatProvider>
+      <TimelineContent />
+    </ChatProvider>
   );
 };
 

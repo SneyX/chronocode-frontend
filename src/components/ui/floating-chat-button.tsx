@@ -1,9 +1,10 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { MessageCircle, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import ChatDialog from './chat-dialog';
+import SidebarChat from './sidebar-chat';
+import { useChat } from '@/contexts/chat-context';
 
 interface FloatingChatButtonProps {
   repoName?: string;
@@ -14,12 +15,16 @@ const FloatingChatButton: React.FC<FloatingChatButtonProps> = ({
   repoName,
   className,
 }) => {
-  const [isOpen, setIsOpen] = useState(false);
+  const { isOpen, setIsOpen } = useChat();
+
+  const toggleChat = () => {
+    setIsOpen(!isOpen);
+  };
 
   return (
     <>
       <Button
-        onClick={() => setIsOpen(true)}
+        onClick={toggleChat}
         variant="default"
         size="icon"
         className={cn(
@@ -35,11 +40,7 @@ const FloatingChatButton: React.FC<FloatingChatButtonProps> = ({
         )}
       </Button>
 
-      <ChatDialog 
-        isOpen={isOpen} 
-        onClose={() => setIsOpen(false)} 
-        repoName={repoName} 
-      />
+      <SidebarChat repoName={repoName} />
     </>
   );
 };
