@@ -31,7 +31,7 @@ const CommitModal = ({ isOpen, onClose, commits, commitIds, question }: CommitMo
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-3xl max-h-[80vh] overflow-hidden flex flex-col">
+      <DialogContent className="max-w-3xl max-h-[80vh] flex flex-col">
         <DialogHeader>
           <DialogTitle className="text-xl flex items-center gap-2">
             <InfoIcon className="h-5 w-5 text-primary" />
@@ -44,24 +44,26 @@ const CommitModal = ({ isOpen, onClose, commits, commitIds, question }: CommitMo
           )}
         </DialogHeader>
         
-        {filteredCommits.length > 0 ? (
-          <ScrollArea className="flex-1 pr-4">
-            <div className="space-y-4 py-4">
-              {filteredCommits.map(commit => (
-                <CommitCard
-                  key={commit.sha}
-                  commit={commit}
-                  isExpanded={!!expandedCommits[commit.sha]}
-                  onToggleExpand={() => toggleExpand(commit.sha)}
-                />
-              ))}
+        <div className="flex-1 overflow-hidden">
+          {filteredCommits.length > 0 ? (
+            <ScrollArea className="h-[60vh] pr-4">
+              <div className="space-y-4 py-4">
+                {filteredCommits.map(commit => (
+                  <CommitCard
+                    key={commit.sha}
+                    commit={commit}
+                    isExpanded={!!expandedCommits[commit.sha]}
+                    onToggleExpand={() => toggleExpand(commit.sha)}
+                  />
+                ))}
+              </div>
+            </ScrollArea>
+          ) : (
+            <div className="py-8 text-center text-muted-foreground">
+              No commits found with the specified IDs.
             </div>
-          </ScrollArea>
-        ) : (
-          <div className="py-8 text-center text-muted-foreground">
-            No commits found with the specified IDs.
-          </div>
-        )}
+          )}
+        </div>
       </DialogContent>
     </Dialog>
   );
