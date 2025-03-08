@@ -1,6 +1,5 @@
 
 import React, { createContext, useContext, useState, ReactNode } from 'react';
-import { Commit } from '@/types';
 
 interface ChatContextProps {
   isChatOpen: boolean;
@@ -35,6 +34,12 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
 
   const toggleChat = () => {
     setIsChatOpen(prev => !prev);
+    
+    // Clear highlighted commits when closing the chat
+    if (isChatOpen) {
+      setHighlightedCommits([]);
+      setCurrentQuestion(null);
+    }
   };
 
   return (
