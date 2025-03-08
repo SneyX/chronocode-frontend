@@ -12,7 +12,7 @@ interface HeaderProps {
 const Header: React.FC<HeaderProps> = ({ className }) => {
   return (
     <header className={cn(
-      'w-full border-b glass-morphism sticky top-0 z-50',
+      'w-full border-b bg-background/80 backdrop-blur-md sticky top-0 z-10',
       className
     )}>
       <div className="container mx-auto py-4 px-6 flex items-center justify-between">
