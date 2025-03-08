@@ -133,7 +133,13 @@ const Timeline: React.FC<TimelineProps> = ({
                                   {getCommitTypeIcon(commitType)}
                                 </button>
                               </TooltipTrigger>
-                              <TooltipContent side="top" className="max-w-xs p-0 overflow-hidden">
+                              <TooltipContent 
+                                side="top" 
+                                className="max-w-xs p-0 overflow-hidden z-50"
+                                avoidCollisions={true}
+                                collisionPadding={20}
+                                sideOffset={12}
+                              >
                                 <div className="p-3">
                                   <p className="font-medium text-sm">{analysis?.title || commit.message}</p>
                                   <p className="text-xs text-muted-foreground mt-1">
