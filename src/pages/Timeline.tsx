@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -11,10 +10,11 @@ import RepositoryInput from '@/components/ui/repository-input';
 import FloatingChatButton from '@/components/ui/floating-chat-button';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Loader2, RefreshCw } from 'lucide-react';
+import { ArrowLeft, Loader2, RefreshCw, MessageCircle, X } from 'lucide-react';
 import { Commit, TimelineFilters, TimeScale, GroupBy } from '@/types';
 import { filterCommits } from '@/utils/filter-utils';
 import { fetchCommitsForRepo, extractRepoNameFromUrl } from '@/lib/supabase';
+import { useChatContext, ChatContextFilter } from '@/hooks/use-chat-context';
 
 const mockCommits: Commit[] = [
   {
@@ -251,7 +251,7 @@ const TimelinePage: React.FC = () => {
   const [filters, setFilters] = useState<TimelineFilters>({
     types: [],
     authors: [],
-    epics: [], // Initialize empty epics array
+    epics: [],
     dateRange: { from: null, to: null },
     searchTerm: ''
   });
@@ -259,21 +259,22 @@ const TimelinePage: React.FC = () => {
   const [groupBy, setGroupBy] = useState<GroupBy>('type');
   const [selectedCommit, setSelectedCommit] = useState<string | undefined>();
   const [expandedCommit, setExpandedCommit] = useState<string | undefined>();
+  const [isChatOpen, setIsChatOpen] = useState(false);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const repoParam = searchParams.get('repo');
   const exampleParam = searchParams.get('example');
   
+  const { contextFilter, filterCommitsByContext } = useChatContext();
+
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        // Check if we have a repository parameter
         if (repoParam) {
           console.log('Fetching data for repo:', repoParam, 'example:', exampleParam);
           
           try {
-            // First check if there's actual data in Supabase for this repo
             const repoData = await fetchCommitsForRepo(repoParam);
             
             if (repoData && repoData.length > 0) {
@@ -281,7 +282,6 @@ const TimelinePage: React.FC = () => {
               setCommits(repoData);
               toast.success(`Loaded ${repoData.length} commits for ${repoParam}`);
             } 
-            // Only use example data if explicitly requested or no data found
             else if (exampleParam === 'true') {
               console.log('Using example data as requested for repo:', repoParam);
               await new Promise(resolve => setTimeout(resolve, 1500));
@@ -290,7 +290,6 @@ const TimelinePage: React.FC = () => {
                 description: 'The actual analysis will be available soon.',
               });
             } else {
-              // No data found, show empty state
               console.log('No data found in Supabase for repo:', repoParam);
               setCommits([]);
               toast.warning('No commit data found for this repository', {
@@ -300,7 +299,6 @@ const TimelinePage: React.FC = () => {
           } catch (error) {
             console.error('Error fetching commits from Supabase:', error);
             if (exampleParam === 'true') {
-              // Fallback to example data if there was an error
               setCommits(mockCommits);
               toast.info('Showing example data for this repository', {
                 description: 'The actual analysis will be available soon.',
@@ -313,7 +311,6 @@ const TimelinePage: React.FC = () => {
             }
           }
         } else {
-          // No repo parameter, show example data
           await new Promise(resolve => setTimeout(resolve, 1500));
           setCommits(mockCommits);
           toast.info('Showing example timeline data', {
@@ -335,26 +332,28 @@ const TimelinePage: React.FC = () => {
   }, [repoParam, exampleParam]);
   
   useEffect(() => {
-    setFilteredCommits(filterCommits(commits, filters));
-  }, [commits, filters]);
+    let filtered = filterCommits(commits, filters);
+    
+    if (filterCommitsByContext) {
+      filtered = filterCommitsByContext(filtered);
+    }
+    
+    setFilteredCommits(filtered);
+  }, [commits, filters, filterCommitsByContext]);
   
   const handleRepositorySubmit = async (url: string, repoName: string, repoExists = false) => {
     setIsLoading(true);
     try {
       console.log('Handling repository submit:', repoName, 'exists:', repoExists);
       
-      // First check if we already have data for this repo
       if (repoExists) {
         console.log('Repository already exists in Supabase, navigating...');
-        // If repo exists, navigate directly to timeline with the repo parameter only
         navigate(`/timeline?repo=${encodeURIComponent(repoName)}`);
         
         toast.success('Repository data found!', {
           description: 'Loading timeline from existing data.',
         });
       } else {
-        // If repo doesn't exist, we would normally start analysis
-        // For now, navigate with example=true as a placeholder
         console.log('Repository not found in Supabase, showing example data...');
         await new Promise(resolve => setTimeout(resolve, 2000));
         
@@ -392,14 +391,12 @@ const TimelinePage: React.FC = () => {
     setIsLoading(true);
     try {
       console.log('Refreshing analysis for repo:', repoParam);
-      // In a real scenario, this would trigger a backend process
       await new Promise(resolve => setTimeout(resolve, 2000));
       
       toast.success('Analysis refreshed successfully!', {
         description: 'New commits have been analyzed.',
       });
       
-      // Reload the current page to get fresh data
       window.location.reload();
     } catch (error) {
       console.error('Error refreshing analysis:', error);
@@ -411,11 +408,16 @@ const TimelinePage: React.FC = () => {
     }
   };
   
+  const handleFilterByChat = (filter: ChatContextFilter | null) => {
+    if (filter) {
+      toast.info('Filtering timeline based on chat context');
+    }
+  };
+  
   const selectedCommitData = selectedCommit 
     ? commits.find(commit => commit.sha === selectedCommit)
     : undefined;
 
-  // Show chat button only when we have commit data
   const showChatButton = commits.length > 0;
 
   return (
@@ -465,62 +467,135 @@ const TimelinePage: React.FC = () => {
           <>
             {filteredCommits.length > 0 ? (
               <>
-                <FilterBar 
-                  commits={commits}
-                  filters={filters}
-                  onFilterChange={setFilters}
-                  timeScale={timeScale}
-                  onTimeScaleChange={setTimeScale}
-                  groupBy={groupBy}
-                  onGroupByChange={setGroupBy}
-                />
+                <div className="flex flex-wrap gap-4 mb-4">
+                  <FilterBar 
+                    commits={commits}
+                    filters={filters}
+                    onFilterChange={setFilters}
+                    timeScale={timeScale}
+                    onTimeScaleChange={setTimeScale}
+                    groupBy={groupBy}
+                    onGroupByChange={setGroupBy}
+                    className="flex-grow"
+                  />
+                  
+                  {contextFilter && contextFilter.highlight && (
+                    <div className="bg-primary/10 rounded-lg p-2 flex items-center gap-2 text-sm">
+                      <MessageCircle className="h-4 w-4 text-primary" />
+                      <span>{contextFilter.filterReason}</span>
+                      <Button 
+                        variant="ghost" 
+                        size="icon"
+                        className="h-6 w-6 rounded-full"
+                        onClick={() => handleFilterByChat(null)}
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  )}
+                </div>
                 
-                <Timeline 
-                  commits={filteredCommits}
-                  timeScale={timeScale}
-                  groupBy={groupBy}
-                  selectedCommit={selectedCommit}
-                  onCommitSelect={handleCommitSelect}
-                  className="mb-10 animate-scale-in"
-                />
-                
-                {selectedCommitData && (
-                  <div className="mt-8 animation-delay-200 animate-fade-in">
-                    <h2 className="text-xl font-semibold mb-4">Selected Commit</h2>
-                    <CommitCard 
-                      id={`commit-${selectedCommitData.sha}`}
-                      commit={selectedCommitData}
-                      isExpanded={expandedCommit === selectedCommitData.sha}
-                      onToggleExpand={() => {
-                        if (expandedCommit === selectedCommitData.sha) {
-                          setExpandedCommit(undefined);
-                        } else {
-                          setExpandedCommit(selectedCommitData.sha);
-                        }
-                      }}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                  <div className="lg:col-span-2">
+                    <Timeline 
+                      commits={filteredCommits}
+                      timeScale={timeScale}
+                      groupBy={groupBy}
+                      selectedCommit={selectedCommit}
+                      onCommitSelect={handleCommitSelect}
+                      className="mb-6 animate-scale-in"
                     />
+                    
+                    {selectedCommitData && (
+                      <div className="mt-6 animation-delay-200 animate-fade-in">
+                        <h2 className="text-xl font-semibold mb-4">Selected Commit</h2>
+                        <CommitCard 
+                          id={`commit-${selectedCommitData.sha}`}
+                          commit={selectedCommitData}
+                          isExpanded={expandedCommit === selectedCommitData.sha}
+                          onToggleExpand={() => {
+                            if (expandedCommit === selectedCommitData.sha) {
+                              setExpandedCommit(undefined);
+                            } else {
+                              setExpandedCommit(selectedCommitData.sha);
+                            }
+                          }}
+                        />
+                      </div>
+                    )}
                   </div>
-                )}
-                
-                <div className="mt-8">
-                  <h2 className="text-xl font-semibold mb-4">Recent Commits</h2>
-                  <div className="grid grid-cols-1 gap-4 animation-delay-300 animate-fade-in">
-                    {filteredCommits.slice(0, 5).map((commit) => (
-                      <CommitCard 
-                        key={commit.sha}
-                        id={`commit-${commit.sha}`}
-                        commit={commit}
-                        isExpanded={expandedCommit === commit.sha}
-                        onToggleExpand={() => {
-                          if (expandedCommit === commit.sha) {
-                            setExpandedCommit(undefined);
-                          } else {
-                            setExpandedCommit(commit.sha);
-                          }
-                        }}
-                        className={selectedCommit === commit.sha ? 'ring-2 ring-primary' : ''}
-                      />
-                    ))}
+                  
+                  <div className="lg:col-span-1">
+                    <div className="sticky top-6">
+                      <div className="flex justify-between items-center mb-4">
+                        <h2 className="text-xl font-semibold">Code Intelligence</h2>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => setIsChatOpen(!isChatOpen)}
+                          className="flex items-center gap-1"
+                        >
+                          {isChatOpen ? (
+                            <>
+                              <X className="h-4 w-4" />
+                              <span>Close</span>
+                            </>
+                          ) : (
+                            <>
+                              <MessageCircle className="h-4 w-4" />
+                              <span>Ask AI</span>
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                      
+                      {isChatOpen ? (
+                        <div className="h-[600px] bg-card animate-fade-in">
+                          <FloatingChatButton 
+                            repoName={repoParam || undefined}
+                            commits={commits}
+                            onFilterChange={handleFilterByChat}
+                            inline={true}
+                            className="hidden"
+                          />
+                        </div>
+                      ) : (
+                        <div className="space-y-4 animation-delay-300 animate-fade-in">
+                          <p className="text-muted-foreground text-sm">
+                            Ask the AI about commit history, motivations behind changes,
+                            or architectural decisions. Get insights and automatically
+                            filter the timeline based on your questions.
+                          </p>
+                          <Button 
+                            className="w-full"
+                            onClick={() => setIsChatOpen(true)}
+                          >
+                            <MessageCircle className="mr-2 h-4 w-4" />
+                            Start a conversation
+                          </Button>
+                          
+                          <Separator className="my-6" />
+                          
+                          <h3 className="font-medium">Recent Commits</h3>
+                          <div className="space-y-3">
+                            {filteredCommits.slice(0, 3).map((commit) => (
+                              <CommitCard 
+                                key={commit.sha}
+                                id={`commit-${commit.sha}`}
+                                commit={commit}
+                                isExpanded={false}
+                                onToggleExpand={() => {
+                                  setSelectedCommit(commit.sha);
+                                  setExpandedCommit(commit.sha);
+                                }}
+                                className={selectedCommit === commit.sha ? 'ring-2 ring-primary' : ''}
+                                compact={true}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               </>
@@ -530,6 +605,7 @@ const TimelinePage: React.FC = () => {
                 <Button variant="outline" onClick={() => setFilters({
                   types: [],
                   authors: [],
+                  epics: [],
                   dateRange: { from: null, to: null },
                   searchTerm: ''
                 })}>
@@ -541,8 +617,12 @@ const TimelinePage: React.FC = () => {
         )}
       </main>
       
-      {showChatButton && (
-        <FloatingChatButton repoName={repoParam || undefined} />
+      {showChatButton && !isChatOpen && (
+        <FloatingChatButton 
+          repoName={repoParam || undefined} 
+          commits={commits}
+          onFilterChange={handleFilterByChat}
+        />
       )}
       
       <Footer />
