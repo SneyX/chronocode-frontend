@@ -1,4 +1,3 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -167,6 +166,26 @@
 /* Container adjustments */
 .container {
   transition: padding-right 0.3s ease;
+}
+
+/* Timeline scroll area customizations */
+.timeline-scroll-area {
+  overflow-x: auto;
+}
+
+.timeline-content {
+  min-width: max-content;
+}
+
+.timeline-column {
+  min-width: 120px;
+}
+
+.timeline-label {
+  position: sticky;
+  left: 0;
+  z-index: 20;
+  background-color: var(--background);
 }
 
 /* Mobile-first design, will stack the chat from bottom */

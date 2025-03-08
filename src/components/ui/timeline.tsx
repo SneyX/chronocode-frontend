@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
@@ -116,6 +117,9 @@ const Timeline: React.FC<TimelineProps> = ({
     }
   }, [highlightedCommits]);
 
+  // Calculate the number of columns for min-width
+  const columnCount = timeIntervals.length || 1;
+
   return (
     <div className={cn(
       "w-full h-full flex flex-col bg-card rounded-lg border shadow-sm overflow-hidden",
@@ -133,15 +137,15 @@ const Timeline: React.FC<TimelineProps> = ({
         </div>
       )}
       
-      <div className="flex-none bg-muted/30 border-b">
+      <div className="flex-none bg-muted/30 border-b overflow-hidden">
         <div className={cn(
-          "flex",
+          "flex min-w-max",
           isChatOpen ? "pl-32" : "pl-40"
         )}>
           {timeIntervals.map((interval, index) => (
             <div 
               key={index} 
-              className="flex-1 px-2 py-3 text-center text-xs font-medium border-r last:border-r-0"
+              className="min-w-[120px] px-2 py-3 text-center text-xs font-medium border-r last:border-r-0"
             >
               {formatTimeInterval(interval, timeScale)}
             </div>
@@ -149,14 +153,14 @@ const Timeline: React.FC<TimelineProps> = ({
         </div>
       </div>
       
-      <ScrollArea className="flex-grow h-full" ref={scrollAreaRef}>
-        <div className="min-w-fit h-full">
+      <ScrollArea className="flex-grow h-full" orientation="horizontal">
+        <div className="min-w-max h-full">
           {Object.entries(groupedCommits).map(([groupName, groupCommits], groupIndex) => (
             groupCommits.length > 0 && (
               <div key={groupName} className="group/row">
                 <div className="flex sticky left-0 z-10">
                   <div className={cn(
-                    "bg-muted/30 p-3 font-medium border-r flex items-center",
+                    "bg-muted/30 p-3 font-medium border-r flex items-center sticky left-0 z-20",
                     isChatOpen ? "w-32" : "w-40"
                   )}>
                     {groupBy === 'type' && (
@@ -170,9 +174,9 @@ const Timeline: React.FC<TimelineProps> = ({
                     <span className="truncate">{groupName}</span>
                   </div>
                   
-                  <div className="flex-grow relative flex border-b min-h-[80px] group-hover/row:bg-muted/10">
+                  <div className="flex-grow relative flex border-b min-h-[80px] group-hover/row:bg-muted/10" style={{ width: `${columnCount * 120}px` }}>
                     {timeIntervals.map((_, index) => (
-                      <div key={index} className="flex-1 border-r last:border-r-0"></div>
+                      <div key={index} className="min-w-[120px] border-r last:border-r-0"></div>
                     ))}
                     
                     {clusterCommits(groupCommits, groupName).map((cluster) => {
