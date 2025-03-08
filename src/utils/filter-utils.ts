@@ -1,4 +1,3 @@
-
 import { Commit, CommitType, TimelineFilters } from '@/types';
 
 /**
@@ -72,15 +71,21 @@ export const groupCommits = (commits: Commit[], groupBy: 'type' | 'author' | 'da
       // Support both property names
       const analyses = commit.commit_analyses || commit.commit_analises || [];
       
-      if (analyses.length > 0) {
+      if (analyses && analyses.length > 0) {
         const primaryType = analyses[0].type;
-        grouped[primaryType].push(commit);
+        if (primaryType && grouped[primaryType]) {
+          grouped[primaryType].push(commit);
+        } else {
+          // If analysis type is invalid, put in CHORE category
+          grouped['CHORE'].push(commit);
+        }
       } else {
         // If no analysis, put in CHORE category
         grouped['CHORE'].push(commit);
       }
     });
   } else if (groupBy === 'author') {
+    // Initialize the grouped object before adding items
     commits.forEach(commit => {
       if (!grouped[commit.author]) {
         grouped[commit.author] = [];

@@ -261,29 +261,45 @@ const TimelinePage: React.FC = () => {
         if (repoParam) {
           console.log('Fetching data for repo:', repoParam, 'example:', exampleParam);
           
-          // First check if there's actual data in Supabase for this repo
-          const repoData = await fetchCommitsForRepo(repoParam);
-          
-          if (repoData && repoData.length > 0) {
-            console.log('Found real data in Supabase for repo:', repoParam);
-            setCommits(repoData);
-            toast.success(`Loaded ${repoData.length} commits for ${repoParam}`);
-          } 
-          // Only use example data if explicitly requested or no data found
-          else if (exampleParam === 'true') {
-            console.log('Using example data as requested for repo:', repoParam);
-            await new Promise(resolve => setTimeout(resolve, 1500));
-            setCommits(mockCommits);
-            toast.info('Showing example data for this repository', {
-              description: 'The actual analysis will be available soon.',
-            });
-          } else {
-            // No data found, show empty state
-            console.log('No data found in Supabase for repo:', repoParam);
-            setCommits([]);
-            toast.warning('No commit data found for this repository', {
-              description: 'Please try analyzing the repository again.',
-            });
+          try {
+            // First check if there's actual data in Supabase for this repo
+            const repoData = await fetchCommitsForRepo(repoParam);
+            
+            if (repoData && repoData.length > 0) {
+              console.log('Found real data in Supabase for repo:', repoParam);
+              setCommits(repoData);
+              toast.success(`Loaded ${repoData.length} commits for ${repoParam}`);
+            } 
+            // Only use example data if explicitly requested or no data found
+            else if (exampleParam === 'true') {
+              console.log('Using example data as requested for repo:', repoParam);
+              await new Promise(resolve => setTimeout(resolve, 1500));
+              setCommits(mockCommits);
+              toast.info('Showing example data for this repository', {
+                description: 'The actual analysis will be available soon.',
+              });
+            } else {
+              // No data found, show empty state
+              console.log('No data found in Supabase for repo:', repoParam);
+              setCommits([]);
+              toast.warning('No commit data found for this repository', {
+                description: 'Please try analyzing the repository again.',
+              });
+            }
+          } catch (error) {
+            console.error('Error fetching commits from Supabase:', error);
+            if (exampleParam === 'true') {
+              // Fallback to example data if there was an error
+              setCommits(mockCommits);
+              toast.info('Showing example data for this repository', {
+                description: 'The actual analysis will be available soon.',
+              });
+            } else {
+              setCommits([]);
+              toast.error('Error loading repository data', {
+                description: 'Please try again later.',
+              });
+            }
           }
         } else {
           // No repo parameter, show example data

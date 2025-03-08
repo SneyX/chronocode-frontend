@@ -28,7 +28,7 @@ const CommitCard: React.FC<CommitCardProps> = ({
 }) => {
   // Handle both property names for backward compatibility
   const analyses = commit.commit_analyses || commit.commit_analises || [];
-  const analysis = analyses[0] || null;
+  const analysis = analyses && analyses.length > 0 ? analyses[0] : null;
   
   const commitType = analysis?.type || 'CHORE';
   
@@ -38,7 +38,7 @@ const CommitCard: React.FC<CommitCardProps> = ({
     'MILESTONE': Trophy,
     'BUG': Bug,
     'CHORE': Wrench,
-  }[commitType];
+  }[commitType] || Wrench; // Provide a fallback
 
   return (
     <Card 

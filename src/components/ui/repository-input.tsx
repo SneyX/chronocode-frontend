@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils';
 import { extractRepoNameFromUrl, checkRepoExists } from '@/lib/supabase';
 
 interface RepositoryInputProps {
-  onSubmit: (url: string, repoName: string) => Promise<void>;
+  onSubmit: (url: string, repoName: string, repoExists?: boolean) => Promise<void>;
   isLoading?: boolean;
   className?: string;
 }
@@ -54,9 +54,9 @@ const RepositoryInput: React.FC<RepositoryInputProps> = ({
       const exists = await checkRepoExists(repoName);
       setCheckingRepo(false);
       
-      console.log('Repository exists check:', exists);
+      console.log('Repository exists:', exists);
       
-      await onSubmit(url, repoName);
+      await onSubmit(url, repoName, exists);
     } catch (error) {
       console.error('Error submitting repository URL:', error);
       toast.error('Failed to process repository. Please try again.');
