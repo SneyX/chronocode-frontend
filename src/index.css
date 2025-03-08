@@ -55,7 +55,7 @@
     --ring: 240 4.9% 83.9%;
   }
 }
- 
+
 @layer base {
   * {
     @apply border-border;
@@ -189,6 +189,17 @@
   flex-direction: column;
 }
 
+/* Timeline group label styles */
+.timeline-group-label {
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  background-color: rgba(255, 255, 255, 0.85);
+}
+
+.dark .timeline-group-label {
+  background-color: rgba(23, 23, 23, 0.85);
+}
+
 /* Timeline adjustments when chat is open */
 .chat-open .timeline-labels {
   font-size: 0.75rem;
@@ -203,7 +214,7 @@
   transition: padding-right 0.3s ease;
 }
 
-/* Mobile-first design, will stack the chat from bottom */
+/* Mobile-first design */
 @media (max-width: 768px) {
   .sidebar-chat {
     height: 80dvh;
@@ -222,4 +233,3 @@
     padding-right: 1rem !important;
   }
 }
-
