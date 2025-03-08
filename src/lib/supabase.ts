@@ -9,6 +9,7 @@ export const supabase = createClient(supabaseUrl, supabaseKey);
 
 export const fetchCommitsForRepo = async (repoName: string): Promise<Commit[]> => {
   try {
+    console.log('Fetching commits for repo:', repoName);
     const { data: commits, error } = await supabase
       .from('commits')
       .select(`
@@ -53,6 +54,10 @@ export const checkRepoExists = async (repoName: string): Promise<boolean> => {
 
 export const extractRepoNameFromUrl = (url: string): string => {
   // Extract repo name from GitHub URL
-  const match = url.match(/github\.com\/([^/]+\/[^/]+)/);
-  return match ? match[1].replace('.git', '') : '';
+  // Handle URLs with or without trailing slashes, .git, and query parameters
+  const urlWithoutParams = url.split(/[?#]/)[0]; // Remove query parameters and fragments
+  const cleanUrl = urlWithoutParams.replace(/\.git$/, ''); // Remove .git suffix if present
+  
+  const match = cleanUrl.match(/github\.com\/([^/]+\/[^/]+)/);
+  return match ? match[1] : '';
 };

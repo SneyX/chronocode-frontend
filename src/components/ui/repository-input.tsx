@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Search, GitBranch, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { extractRepoNameFromUrl } from '@/lib/supabase';
+import { extractRepoNameFromUrl, checkRepoExists } from '@/lib/supabase';
 
 interface RepositoryInputProps {
   onSubmit: (url: string, repoName: string) => Promise<void>;
@@ -19,10 +19,11 @@ const RepositoryInput: React.FC<RepositoryInputProps> = ({
   className,
 }) => {
   const [url, setUrl] = useState('');
+  const [checkingRepo, setCheckingRepo] = useState(false);
   
   const validateUrl = (url: string): boolean => {
     // Basic validation to check if it's a GitHub repository URL
-    const githubRegex = /^https?:\/\/(www\.)?github\.com\/[\w-]+\/[\w.-]+\/?$/;
+    const githubRegex = /^https?:\/\/(www\.)?github\.com\/[\w-]+\/[\w.-]+\/?.*$/;
     return githubRegex.test(url);
   };
 
@@ -48,10 +49,18 @@ const RepositoryInput: React.FC<RepositoryInputProps> = ({
     }
     
     try {
-      await onSubmit(url, repoName);
+      // Check if repo exists in Supabase before submitting
+      setCheckingRepo(true);
+      const exists = await checkRepoExists(repoName);
+      setCheckingRepo(false);
+      
+      console.log('Repository exists check:', exists);
+      
+      await onSubmit(url, repoName, exists);
     } catch (error) {
       console.error('Error submitting repository URL:', error);
       toast.error('Failed to process repository. Please try again.');
+      setCheckingRepo(false);
     }
   };
 
@@ -76,10 +85,10 @@ const RepositoryInput: React.FC<RepositoryInputProps> = ({
         </div>
         <Button
           type="submit"
-          disabled={isLoading}
+          disabled={isLoading || checkingRepo}
           className="text-white bg-primary hover:bg-primary/90 rounded-lg px-6 py-6 m-1 transition-all"
         >
-          {isLoading ? (
+          {isLoading || checkingRepo ? (
             <Loader2 className="mr-2 h-5 w-5 animate-spin" />
           ) : (
             <Search className="mr-2 h-5 w-5" />
