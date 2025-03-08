@@ -118,6 +118,7 @@ const Timeline: React.FC<TimelineProps> = ({
     }
   }, [highlightedCommits]);
 
+  // Drag to scroll functionality
   const handleMouseDown = (e: React.MouseEvent) => {
     if (timelineContainerRef.current) {
       setIsDragging(true);
@@ -195,8 +196,7 @@ const Timeline: React.FC<TimelineProps> = ({
                 <div key={groupName} className="group/row">
                   <div className="flex">
                     <div className={cn(
-                      "shrink-0 p-3 font-medium border-r flex items-center sticky left-0 z-10",
-                      "bg-background/95 backdrop-blur-sm shadow-sm",
+                      "shrink-0 bg-muted/30 p-3 font-medium border-r flex items-center sticky left-0 z-10",
                       isChatOpen ? "w-32" : "w-40"
                     )}>
                       {groupBy === 'type' && (
