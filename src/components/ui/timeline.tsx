@@ -3,7 +3,13 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Commit, TimeScale, GroupBy, CommitType } from '@/types';
-import { calculateTimeRange, generateTimeIntervals, formatTimeInterval, calculateCommitPosition } from '@/utils/date-utils';
+import { 
+  calculateTimeRange, 
+  generateTimeIntervals, 
+  formatTimeInterval, 
+  calculateCommitPosition,
+  findCommitColumn
+} from '@/utils/date-utils';
 import { groupCommits, getCommitTypeColor } from '@/utils/filter-utils';
 import { GitCommit, Sparkles, AlertTriangle, Trophy, Bug, Wrench, Layers } from 'lucide-react';
 import { formatDate } from '@/utils/date-utils';
@@ -24,6 +30,7 @@ interface TimelineProps {
 
 interface ClusteredCommit {
   position: number;
+  column: number;
   commits: Commit[];
 }
 
@@ -69,29 +76,69 @@ const Timeline: React.FC<TimelineProps> = ({
   };
 
   const clusterCommits = (commits: Commit[], groupName: string): ClusteredCommit[] => {
-    const positionMap: Record<number, Commit[]> = {};
+    // Group commits by their column and position within that column
+    const columnMap: Record<number, Commit[]> = {};
     
     commits.forEach(commit => {
-      const position = calculateCommitPosition(
-        commit.date,
-        timeRange.start,
-        timeRange.end,
-        timeScale
-      );
+      // Find which column this commit belongs to
+      const columnIndex = findCommitColumn(commit.date, timeIntervals, timeScale);
       
-      const roundedPosition = Math.round(position);
-      
-      if (!positionMap[roundedPosition]) {
-        positionMap[roundedPosition] = [];
+      if (!columnMap[columnIndex]) {
+        columnMap[columnIndex] = [];
       }
       
-      positionMap[roundedPosition].push(commit);
+      columnMap[columnIndex].push(commit);
     });
     
-    return Object.entries(positionMap).map(([pos, groupedCommits]) => ({
-      position: Number(pos),
-      commits: groupedCommits
-    }));
+    // For each column, cluster commits by position
+    const result: ClusteredCommit[] = [];
+    
+    Object.entries(columnMap).forEach(([colIndex, colCommits]) => {
+      const column = parseInt(colIndex);
+      
+      // If there's only one commit in the column, just add it
+      if (colCommits.length === 1) {
+        result.push({
+          column,
+          position: 50, // Center of column
+          commits: colCommits
+        });
+        return;
+      }
+      
+      // If there are multiple commits, cluster them by position
+      const positionMap: Record<number, Commit[]> = {};
+      
+      colCommits.forEach(commit => {
+        // Calculate relative position within the column (0-100)
+        const position = calculateCommitPosition(
+          commit.date,
+          timeRange.start,
+          timeRange.end,
+          timeScale
+        );
+        
+        // Round to nearest 5% to create clusters
+        const roundedPosition = Math.round(position / 5) * 5;
+        
+        if (!positionMap[roundedPosition]) {
+          positionMap[roundedPosition] = [];
+        }
+        
+        positionMap[roundedPosition].push(commit);
+      });
+      
+      // Convert position map to clustered commits
+      Object.entries(positionMap).forEach(([pos, posCommits]) => {
+        result.push({
+          column,
+          position: parseInt(pos),
+          commits: posCommits
+        });
+      });
+    });
+    
+    return result;
   };
 
   const handleClusterClick = (cluster: ClusteredCommit) => {
@@ -154,6 +201,13 @@ const Timeline: React.FC<TimelineProps> = ({
     const calculatedWidth = Math.max(minWidth, availableWidth / timeIntervals.length);
     
     return `${calculatedWidth}px`;
+  };
+
+  // Function to get position within a column
+  const getPositionInColumn = (columnIndex: number, relativePosition: number) => {
+    // Make sure position stays within the column boundaries (20% to 80% of column width)
+    const positionPercent = 20 + (relativePosition * 0.6); // Scale 0-100 to 20%-80%
+    return `${positionPercent}%`;
   };
 
   return (
@@ -225,32 +279,18 @@ const Timeline: React.FC<TimelineProps> = ({
                       {timeIntervals.map((_, index) => (
                         <div 
                           key={index} 
-                          className="timeline-column border-r last:border-r-0"
+                          className="timeline-column border-r last:border-r-0 relative"
                           style={{ minWidth: "120px", width: getColumnWidth() }}
                         ></div>
                       ))}
                       
-                      {clusterCommits(groupCommits, groupName).map((cluster) => {
+                      {clusterCommits(groupCommits, groupName).map((cluster, clusterIndex) => {
                         if (cluster.commits.length === 1) {
                           const commit = cluster.commits[0];
                           const analyses = commit.commit_analyses || commit.commit_analises || [];
                           const analysis = analyses[0];
                           const commitType = analysis?.type || 'CHORE';
                           const isCommitHighlighted = isHighlighted(commit.sha);
-                          
-                          // Calculate which column this commit belongs to
-                          const commitDate = new Date(commit.date);
-                          const columnIndex = timeIntervals.findIndex((interval, idx) => {
-                            const nextInterval = timeIntervals[idx + 1];
-                            return (!nextInterval || commitDate < nextInterval) && 
-                                  commitDate >= interval;
-                          });
-                          
-                          const positionInColumn = columnIndex >= 0 ? 
-                            // Position relative to column width (20% to 80% of column width)
-                            `calc(${columnIndex * 100 / timeIntervals.length}% + ${20 + (60 * cluster.position / 100)}%)` : 
-                            // Fallback if can't determine column
-                            `${cluster.position}%`;
                           
                           return (
                             <TooltipProvider key={commit.sha}>
@@ -267,7 +307,9 @@ const Timeline: React.FC<TimelineProps> = ({
                                       isCommitHighlighted && 
                                         'ring-2 ring-offset-2 ring-yellow-400 scale-125 z-25 highlighted-commit animate-pulse'
                                     )}
-                                    style={{ left: positionInColumn }}
+                                    style={{ 
+                                      left: `calc(${cluster.column * 100 / timeIntervals.length}% + ${getPositionInColumn(cluster.column, cluster.position)})`,
+                                    }}
                                     onClick={() => onCommitSelect(commit.sha)}
                                     onMouseEnter={() => setHoveredCommit(commit.sha)}
                                     onMouseLeave={() => setHoveredCommit(null)}
@@ -329,22 +371,8 @@ const Timeline: React.FC<TimelineProps> = ({
                             isHighlighted(commit.sha)
                           ).length;
                           
-                          // Calculate which column this cluster belongs to
-                          const clusterDate = new Date(cluster.commits[0].date);
-                          const columnIndex = timeIntervals.findIndex((interval, idx) => {
-                            const nextInterval = timeIntervals[idx + 1];
-                            return (!nextInterval || clusterDate < nextInterval) && 
-                                  clusterDate >= interval;
-                          });
-                          
-                          const positionInColumn = columnIndex >= 0 ? 
-                            // Position relative to column width (20% to 80% of column width)
-                            `calc(${columnIndex * 100 / timeIntervals.length}% + ${20 + (60 * cluster.position / 100)}%)` : 
-                            // Fallback if can't determine column
-                            `${cluster.position}%`;
-                          
                           return (
-                            <TooltipProvider key={`cluster-${cluster.position}`}>
+                            <TooltipProvider key={`cluster-${cluster.column}-${cluster.position}`}>
                               <Tooltip delayDuration={200}>
                                 <TooltipTrigger asChild>
                                   <button
@@ -356,7 +384,9 @@ const Timeline: React.FC<TimelineProps> = ({
                                       hasHighlightedCommits && 
                                         'ring-2 ring-offset-2 ring-yellow-400 highlighted-commit animate-pulse'
                                     )}
-                                    style={{ left: positionInColumn }}
+                                    style={{ 
+                                      left: `calc(${cluster.column * 100 / timeIntervals.length}% + ${getPositionInColumn(cluster.column, cluster.position)})`,
+                                    }}
                                     onClick={() => handleClusterClick(cluster)}
                                   >
                                     <Layers className="h-5 w-5" />
