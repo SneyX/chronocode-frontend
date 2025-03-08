@@ -173,6 +173,11 @@
 .timeline-scroll-area {
   overflow-x: auto;
   width: 100%;
+  cursor: grab;
+}
+
+.timeline-scroll-area:active {
+  cursor: grabbing;
 }
 
 .timeline-content {

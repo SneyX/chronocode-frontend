@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
@@ -117,9 +116,28 @@ const Timeline: React.FC<TimelineProps> = ({
     }
   }, [highlightedCommits]);
 
-  // Calculate the number of columns for min-width
+  const handleScrollAreaMouseDown = React.useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    const scrollContainer = e.currentTarget;
+    const startX = e.pageX - scrollContainer.offsetLeft;
+    const scrollLeft = scrollContainer.scrollLeft;
+    
+    function handleMouseMove(e: MouseEvent) {
+      const x = e.pageX - scrollContainer.offsetLeft;
+      const walkX = (x - startX) * 2; // Scroll-to-move multiplier
+      scrollContainer.scrollLeft = scrollLeft - walkX;
+    }
+    
+    function handleMouseUp() {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    }
+    
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+  }, []);
+
   const columnCount = timeIntervals.length || 1;
-  const minContentWidth = columnCount * 120;
+  const minContentWidth = Math.max(columnCount * 120, 800);
 
   return (
     <div className={cn(
@@ -156,8 +174,14 @@ const Timeline: React.FC<TimelineProps> = ({
         </ScrollArea>
       </div>
       
-      <ScrollArea className="flex-grow h-full timeline-scroll-area" orientation="both">
-        <div className="min-w-max h-full" style={{ width: `${minContentWidth}px`, minWidth: '100%' }}>
+      <div 
+        className="flex-grow h-full timeline-scroll-area overflow-auto" 
+        onMouseDown={handleScrollAreaMouseDown}
+      >
+        <div 
+          className="min-w-max h-full" 
+          style={{ width: `${minContentWidth}px`, minWidth: '100%' }}
+        >
           {Object.entries(groupedCommits).map(([groupName, groupCommits], groupIndex) => (
             groupCommits.length > 0 && (
               <div key={groupName} className="group/row timeline-row">
@@ -328,7 +352,7 @@ const Timeline: React.FC<TimelineProps> = ({
             )
           ))}
         </div>
-      </ScrollArea>
+      </div>
 
       <Dialog open={openClusterDialog} onOpenChange={setOpenClusterDialog}>
         <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
