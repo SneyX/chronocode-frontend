@@ -15,9 +15,9 @@ import { Calendar } from '@/components/ui/calendar';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
-import { CheckIcon, ClockIcon, FilterIcon, SearchIcon, Users, XIcon } from 'lucide-react';
+import { CheckIcon, ClockIcon, FilterIcon, LayersIcon, SearchIcon, Users, XIcon } from 'lucide-react';
 import { Commit, CommitType, TimelineFilters, TimeScale, GroupBy } from '@/types';
-import { getUniqueAuthors, getCommitTypeColor } from '@/utils/filter-utils';
+import { getUniqueAuthors, getCommitTypeColor, getUniqueEpics, getEpicColor } from '@/utils/filter-utils';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 
@@ -43,6 +43,7 @@ const FilterBar: React.FC<FilterBarProps> = ({
   className,
 }) => {
   const authors = getUniqueAuthors(commits);
+  const epics = getUniqueEpics(commits);
   const commitTypes: CommitType[] = ['FEATURE', 'WARNING', 'MILESTONE', 'BUG', 'CHORE'];
   
   const handleTypeToggle = (type: CommitType) => {
@@ -72,6 +73,20 @@ const FilterBar: React.FC<FilterBarProps> = ({
       });
     }
   };
+
+  const handleEpicToggle = (epic: string) => {
+    if (filters.epics.includes(epic)) {
+      onFilterChange({
+        ...filters,
+        epics: filters.epics.filter(e => e !== epic)
+      });
+    } else {
+      onFilterChange({
+        ...filters,
+        epics: [...filters.epics, epic]
+      });
+    }
+  };
   
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     onFilterChange({
@@ -84,6 +99,7 @@ const FilterBar: React.FC<FilterBarProps> = ({
     onFilterChange({
       types: [],
       authors: [],
+      epics: [],
       dateRange: { from: null, to: null },
       searchTerm: ''
     });
@@ -92,6 +108,7 @@ const FilterBar: React.FC<FilterBarProps> = ({
   const activeFiltersCount = 
     filters.types.length + 
     filters.authors.length + 
+    filters.epics.length +
     (filters.dateRange.from || filters.dateRange.to ? 1 : 0) +
     (filters.searchTerm ? 1 : 0);
 
@@ -149,6 +166,47 @@ const FilterBar: React.FC<FilterBarProps> = ({
           </DropdownMenuGroup>
         </DropdownMenuContent>
       </DropdownMenu>
+
+      {/* Epic Filter */}
+      {epics.length > 0 && (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" className="bg-background">
+              <LayersIcon className="h-4 w-4 mr-2" />
+              Epic
+              {filters.epics.length > 0 && (
+                <Badge variant="secondary" className="ml-2 h-5 px-1">
+                  {filters.epics.length}
+                </Badge>
+              )}
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="w-56 max-h-80 overflow-y-auto">
+            <DropdownMenuLabel>Epics</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuGroup>
+              {epics.map(epic => (
+                <DropdownMenuItem key={epic} onSelect={(e) => {
+                  e.preventDefault();
+                  handleEpicToggle(epic);
+                }}>
+                  <div className="flex items-center justify-between w-full">
+                    <div className="flex items-center">
+                      <Badge className={cn(
+                        'mr-2',
+                        getEpicColor(epic)
+                      )}>
+                        {epic}
+                      </Badge>
+                    </div>
+                    {filters.epics.includes(epic) && <CheckIcon className="h-4 w-4" />}
+                  </div>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      )}
 
       {/* Author Filter */}
       <DropdownMenu>
@@ -279,7 +337,7 @@ const FilterBar: React.FC<FilterBarProps> = ({
           <DropdownMenuLabel>Group By</DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuGroup>
-            {(['type', 'author', 'date'] as GroupBy[]).map((group) => (
+            {(['type', 'author', 'date', 'epic'] as GroupBy[]).map((group) => (
               <DropdownMenuItem 
                 key={group}
                 onSelect={() => onGroupByChange(group)}

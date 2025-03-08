@@ -18,6 +18,16 @@ export const filterCommits = (commits: Commit[], filters: TimelineFilters): Comm
       if (!hasMatchingType) return false;
     }
     
+    // Filter by epic
+    if (filters.epics && filters.epics.length > 0) {
+      // Check if any of the commit analyses match the filter epics
+      const hasMatchingEpic = analyses.some(analysis => 
+        analysis.epic && filters.epics.includes(analysis.epic)
+      );
+      
+      if (!hasMatchingEpic) return false;
+    }
+    
     // Filter by author
     if (filters.authors.length > 0 && !filters.authors.includes(commit.author)) {
       return false;
@@ -38,13 +48,16 @@ export const filterCommits = (commits: Commit[], filters: TimelineFilters): Comm
       const matchesMessage = commit.message.toLowerCase().includes(searchTermLower);
       const matchesDescription = commit.description.toLowerCase().includes(searchTermLower);
       const matchesAuthor = commit.author.toLowerCase().includes(searchTermLower);
+      const matchesEpic = analyses.some(analysis => 
+        analysis.epic?.toLowerCase().includes(searchTermLower)
+      );
       const matchesAnalysis = analyses.some(analysis => 
         analysis.title?.toLowerCase().includes(searchTermLower) ||
         analysis.idea?.toLowerCase().includes(searchTermLower) ||
         analysis.description?.toLowerCase().includes(searchTermLower)
       );
       
-      if (!(matchesMessage || matchesDescription || matchesAuthor || matchesAnalysis)) {
+      if (!(matchesMessage || matchesDescription || matchesAuthor || matchesAnalysis || matchesEpic)) {
         return false;
       }
     }
@@ -56,7 +69,7 @@ export const filterCommits = (commits: Commit[], filters: TimelineFilters): Comm
 /**
  * Groups commits by the specified criterion
  */
-export const groupCommits = (commits: Commit[], groupBy: 'type' | 'author' | 'date'): Record<string, Commit[]> => {
+export const groupCommits = (commits: Commit[], groupBy: 'type' | 'author' | 'date' | 'epic'): Record<string, Commit[]> => {
   const grouped: Record<string, Commit[]> = {};
   
   if (groupBy === 'type') {
@@ -102,6 +115,38 @@ export const groupCommits = (commits: Commit[], groupBy: 'type' | 'author' | 'da
         grouped[monthYear] = [];
       }
       grouped[monthYear].push(commit);
+    });
+  } else if (groupBy === 'epic') {
+    // Group by epic category
+    const epicGroups = new Set<string>();
+    
+    // First identify all unique epics
+    commits.forEach(commit => {
+      const analyses = commit.commit_analyses || commit.commit_analises || [];
+      
+      if (analyses && analyses.length > 0) {
+        const epic = analyses[0].epic || 'Uncategorized';
+        epicGroups.add(epic);
+      } else {
+        epicGroups.add('Uncategorized');
+      }
+    });
+    
+    // Initialize epic groups
+    epicGroups.forEach(epic => {
+      grouped[epic] = [];
+    });
+    
+    // Now assign commits to their epic groups
+    commits.forEach(commit => {
+      const analyses = commit.commit_analyses || commit.commit_analises || [];
+      
+      if (analyses && analyses.length > 0) {
+        const epic = analyses[0].epic || 'Uncategorized';
+        grouped[epic].push(commit);
+      } else {
+        grouped['Uncategorized'].push(commit);
+      }
     });
   }
   
@@ -159,4 +204,54 @@ export const getCommitTypeIcon = (type: CommitType): string => {
     default:
       return 'git-commit';
   }
+};
+
+/**
+ * Gets all unique epics from the commits
+ */
+export const getUniqueEpics = (commits: Commit[]): string[] => {
+  const epics = new Set<string>();
+  
+  commits.forEach(commit => {
+    const analyses = commit.commit_analyses || commit.commit_analises || [];
+    
+    if (analyses && analyses.length > 0) {
+      const epic = analyses[0].epic;
+      if (epic) {
+        epics.add(epic);
+      }
+    }
+  });
+  
+  return Array.from(epics);
+};
+
+/**
+ * Gets a color class for an epic
+ */
+export const getEpicColor = (epic: string): string => {
+  // Create a deterministic color based on the epic name
+  const colors = [
+    'bg-blue-500 text-white',
+    'bg-emerald-500 text-white',
+    'bg-amber-500 text-white',
+    'bg-rose-500 text-white',
+    'bg-violet-500 text-white',
+    'bg-fuchsia-500 text-white',
+    'bg-cyan-500 text-white',
+    'bg-lime-500 text-white',
+    'bg-orange-500 text-white',
+    'bg-indigo-500 text-white',
+  ];
+  
+  // Generate a simple hash from the epic name
+  let hash = 0;
+  for (let i = 0; i < epic.length; i++) {
+    hash = (hash << 5) - hash + epic.charCodeAt(i);
+    hash |= 0; // Convert to 32bit integer
+  }
+  
+  // Get a positive index within the colors array range
+  const index = Math.abs(hash) % colors.length;
+  return colors[index];
 };

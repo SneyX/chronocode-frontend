@@ -7,8 +7,8 @@ import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import { Commit, CommitType } from '@/types';
 import { formatDate } from '@/utils/date-utils';
-import { getCommitTypeColor } from '@/utils/filter-utils';
-import { ExternalLink, GitCommit, Book, Lightbulb, Sparkles, Bug, AlertTriangle, Trophy, Wrench } from 'lucide-react';
+import { getCommitTypeColor, getEpicColor } from '@/utils/filter-utils';
+import { ExternalLink, GitCommit, Book, Lightbulb, Sparkles, Bug, AlertTriangle, Trophy, Wrench, Layers } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface CommitCardProps {
@@ -31,6 +31,7 @@ const CommitCard: React.FC<CommitCardProps> = ({
   const analysis = analyses && analyses.length > 0 ? analyses[0] : null;
   
   const commitType = analysis?.type || 'CHORE';
+  const epic = analysis?.epic;
   
   const TypeIcon = {
     'FEATURE': Sparkles,
@@ -75,15 +76,26 @@ const CommitCard: React.FC<CommitCardProps> = ({
               </p>
             </div>
           </div>
-          {analysis && (
-            <Badge className={cn(
-              'flex items-center space-x-1 px-2 py-1',
-              getCommitTypeColor(analysis.type)
-            )}>
-              <TypeIcon className="h-3 w-3" />
-              <span>{analysis.type}</span>
-            </Badge>
-          )}
+          <div className="flex items-center gap-2">
+            {epic && (
+              <Badge className={cn(
+                'flex items-center space-x-1 px-2 py-1',
+                getEpicColor(epic)
+              )}>
+                <Layers className="h-3 w-3 mr-1" />
+                {epic}
+              </Badge>
+            )}
+            {analysis && (
+              <Badge className={cn(
+                'flex items-center space-x-1 px-2 py-1',
+                getCommitTypeColor(analysis.type)
+              )}>
+                <TypeIcon className="h-3 w-3 mr-1" />
+                {analysis.type}
+              </Badge>
+            )}
+          </div>
         </div>
         
         <CardTitle className="mt-3 text-lg font-semibold">
@@ -130,6 +142,18 @@ const CommitCard: React.FC<CommitCardProps> = ({
                 </h4>
                 <p className="mt-1 text-sm text-muted-foreground px-6">
                   {analysis.idea}
+                </p>
+              </div>
+            )}
+            
+            {analysis?.epic && (
+              <div>
+                <h4 className="text-sm font-semibold flex items-center">
+                  <Layers className="h-4 w-4 mr-2 text-primary" />
+                  Epic
+                </h4>
+                <p className="mt-1 text-sm text-muted-foreground px-6">
+                  {analysis.epic}
                 </p>
               </div>
             )}

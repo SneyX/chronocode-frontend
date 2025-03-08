@@ -242,6 +242,7 @@ const TimelinePage: React.FC = () => {
   const [filters, setFilters] = useState<TimelineFilters>({
     types: [],
     authors: [],
+    epics: [], // Initialize empty epics array
     dateRange: { from: null, to: null },
     searchTerm: ''
   });

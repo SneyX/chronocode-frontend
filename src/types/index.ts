@@ -11,6 +11,7 @@ export interface CommitAnalysis {
   description: string;
   commit_sha: string;
   type: CommitType;
+  epic?: string; // New field for epic categorization
 }
 
 // Commit
@@ -44,11 +45,12 @@ export interface TimelineFilters {
     to: Date | null;
   };
   searchTerm: string;
+  epics: string[]; // New filter for epics
 }
 
 // Timeline View Options
 export type TimeScale = 'day' | 'week' | 'month' | 'quarter' | 'year';
-export type GroupBy = 'type' | 'author' | 'date';
+export type GroupBy = 'type' | 'author' | 'date' | 'epic'; // Added 'epic' as a grouping option
 
 export interface TimelineViewOptions {
   timeScale: TimeScale;
