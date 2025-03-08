@@ -1,4 +1,5 @@
-import { format, parse, addDays, addWeeks, addMonths, addYears, differenceInDays, differenceInWeeks, differenceInMonths, differenceInYears, isSameYear, isSameMonth, isSameQuarter, isSameWeek, isSameDay, isWithinInterval, startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfQuarter, endOfQuarter, startOfYear, endOfYear } from 'date-fns';
+
+import { format, parse, addDays, addWeeks, addMonths, addYears, differenceInDays, differenceInWeeks, differenceInMonths, differenceInYears } from 'date-fns';
 import { TimeScale } from '@/types';
 
 /**
@@ -113,45 +114,6 @@ export const formatTimeInterval = (date: Date, scale: TimeScale): string => {
 };
 
 /**
- * Checks if a date is within a specific interval on the timeline
- */
-export const isDateInTimeInterval = (date: Date, intervalStart: Date, intervalEnd: Date | undefined, scale: TimeScale): boolean => {
-  if (!intervalEnd) {
-    // If there's no end interval, compare based on the scale unit
-    switch (scale) {
-      case 'day':
-        return isSameDay(date, intervalStart);
-      case 'week':
-        return isSameWeek(date, intervalStart);
-      case 'month':
-        return isSameMonth(date, intervalStart);
-      case 'quarter':
-        return isSameQuarter(date, intervalStart);
-      case 'year':
-        return isSameYear(date, intervalStart);
-      default:
-        return isSameDay(date, intervalStart);
-    }
-  }
-  
-  // Otherwise check if the date is within the interval
-  switch (scale) {
-    case 'day':
-      return isWithinInterval(date, { start: startOfDay(intervalStart), end: endOfDay(intervalEnd) });
-    case 'week':
-      return isWithinInterval(date, { start: startOfWeek(intervalStart), end: endOfWeek(intervalEnd) });
-    case 'month':
-      return isWithinInterval(date, { start: startOfMonth(intervalStart), end: endOfMonth(intervalEnd) });
-    case 'quarter':
-      return isWithinInterval(date, { start: startOfQuarter(intervalStart), end: endOfQuarter(intervalEnd) });
-    case 'year':
-      return isWithinInterval(date, { start: startOfYear(intervalStart), end: endOfYear(intervalEnd) });
-    default:
-      return isWithinInterval(date, { start: intervalStart, end: intervalEnd });
-  }
-};
-
-/**
  * Calculates the position of a commit on the timeline
  */
 export const calculateCommitPosition = (
@@ -164,8 +126,7 @@ export const calculateCommitPosition = (
   const totalDuration = getDurationByScale(timeStart, timeEnd, scale);
   const commitDuration = getDurationByScale(timeStart, date, scale);
   
-  // Calculate position as a percentage, constrained between 0-100
-  return Math.max(0, Math.min(100, (commitDuration / totalDuration) * 100));
+  return (commitDuration / totalDuration) * 100;
 };
 
 /**
@@ -186,36 +147,4 @@ const getDurationByScale = (start: Date, end: Date, scale: TimeScale): number =>
     default:
       return Math.max(1, differenceInDays(end, start));
   }
-};
-
-/**
- * Finds which column a commit belongs to based on its date
- */
-export const findCommitColumn = (
-  commitDate: string, 
-  timeIntervals: Date[], 
-  scale: TimeScale
-): number => {
-  const date = new Date(commitDate);
-  
-  // Find the column index where this commit belongs
-  for (let i = 0; i < timeIntervals.length; i++) {
-    const currentInterval = timeIntervals[i];
-    const nextInterval = i < timeIntervals.length - 1 ? timeIntervals[i + 1] : null;
-    
-    if (nextInterval) {
-      // Check if commit is between current interval and next interval
-      if (isDateInTimeInterval(date, currentInterval, nextInterval, scale)) {
-        return i;
-      }
-    } else {
-      // For the last interval
-      if (isDateInTimeInterval(date, currentInterval, undefined, scale)) {
-        return i;
-      }
-    }
-  }
-  
-  // Fallback to the first column if we can't determine
-  return 0;
 };
