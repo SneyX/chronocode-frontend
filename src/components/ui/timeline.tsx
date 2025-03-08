@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -145,6 +146,16 @@ const Timeline: React.FC<TimelineProps> = ({
     setIsDragging(false);
   };
 
+  // Function to calculate column widths
+  const getColumnWidth = () => {
+    const minWidth = 120; // Minimum width for each column
+    const containerWidth = timelineContainerRef.current?.clientWidth || 800;
+    const availableWidth = containerWidth - (isChatOpen ? 120 : 160); // Width minus the label column
+    const calculatedWidth = Math.max(minWidth, availableWidth / timeIntervals.length);
+    
+    return `${calculatedWidth}px`;
+  };
+
   return (
     <div className={cn(
       "w-full h-full flex flex-col bg-card rounded-lg border shadow-sm overflow-hidden",
@@ -182,6 +193,7 @@ const Timeline: React.FC<TimelineProps> = ({
                 <div 
                   key={index} 
                   className="timeline-column px-2 py-3 text-center text-xs font-medium border-r last:border-r-0"
+                  style={{ minWidth: "120px", width: getColumnWidth() }}
                 >
                   {formatTimeInterval(interval, timeScale)}
                 </div>
@@ -211,7 +223,11 @@ const Timeline: React.FC<TimelineProps> = ({
                     
                     <div className="flex-grow relative flex border-b min-h-[80px] group-hover/row:bg-muted/10">
                       {timeIntervals.map((_, index) => (
-                        <div key={index} className="timeline-column border-r last:border-r-0"></div>
+                        <div 
+                          key={index} 
+                          className="timeline-column border-r last:border-r-0"
+                          style={{ minWidth: "120px", width: getColumnWidth() }}
+                        ></div>
                       ))}
                       
                       {clusterCommits(groupCommits, groupName).map((cluster) => {
@@ -221,6 +237,20 @@ const Timeline: React.FC<TimelineProps> = ({
                           const analysis = analyses[0];
                           const commitType = analysis?.type || 'CHORE';
                           const isCommitHighlighted = isHighlighted(commit.sha);
+                          
+                          // Calculate which column this commit belongs to
+                          const commitDate = new Date(commit.date);
+                          const columnIndex = timeIntervals.findIndex((interval, idx) => {
+                            const nextInterval = timeIntervals[idx + 1];
+                            return (!nextInterval || commitDate < nextInterval) && 
+                                  commitDate >= interval;
+                          });
+                          
+                          const positionInColumn = columnIndex >= 0 ? 
+                            // Position relative to column width (20% to 80% of column width)
+                            `calc(${columnIndex * 100 / timeIntervals.length}% + ${20 + (60 * cluster.position / 100)}%)` : 
+                            // Fallback if can't determine column
+                            `${cluster.position}%`;
                           
                           return (
                             <TooltipProvider key={commit.sha}>
@@ -237,7 +267,7 @@ const Timeline: React.FC<TimelineProps> = ({
                                       isCommitHighlighted && 
                                         'ring-2 ring-offset-2 ring-yellow-400 scale-125 z-25 highlighted-commit animate-pulse'
                                     )}
-                                    style={{ left: `${cluster.position}%` }}
+                                    style={{ left: positionInColumn }}
                                     onClick={() => onCommitSelect(commit.sha)}
                                     onMouseEnter={() => setHoveredCommit(commit.sha)}
                                     onMouseLeave={() => setHoveredCommit(null)}
@@ -299,6 +329,20 @@ const Timeline: React.FC<TimelineProps> = ({
                             isHighlighted(commit.sha)
                           ).length;
                           
+                          // Calculate which column this cluster belongs to
+                          const clusterDate = new Date(cluster.commits[0].date);
+                          const columnIndex = timeIntervals.findIndex((interval, idx) => {
+                            const nextInterval = timeIntervals[idx + 1];
+                            return (!nextInterval || clusterDate < nextInterval) && 
+                                  clusterDate >= interval;
+                          });
+                          
+                          const positionInColumn = columnIndex >= 0 ? 
+                            // Position relative to column width (20% to 80% of column width)
+                            `calc(${columnIndex * 100 / timeIntervals.length}% + ${20 + (60 * cluster.position / 100)}%)` : 
+                            // Fallback if can't determine column
+                            `${cluster.position}%`;
+                          
                           return (
                             <TooltipProvider key={`cluster-${cluster.position}`}>
                               <Tooltip delayDuration={200}>
@@ -312,7 +356,7 @@ const Timeline: React.FC<TimelineProps> = ({
                                       hasHighlightedCommits && 
                                         'ring-2 ring-offset-2 ring-yellow-400 highlighted-commit animate-pulse'
                                     )}
-                                    style={{ left: `${cluster.position}%` }}
+                                    style={{ left: positionInColumn }}
                                     onClick={() => handleClusterClick(cluster)}
                                   >
                                     <Layers className="h-5 w-5" />

@@ -126,7 +126,11 @@ export const calculateCommitPosition = (
   const totalDuration = getDurationByScale(timeStart, timeEnd, scale);
   const commitDuration = getDurationByScale(timeStart, date, scale);
   
-  return (commitDuration / totalDuration) * 100;
+  // Calculate position as a percentage, but constrain to be within the range of the timeline (5%-95%)
+  const rawPosition = (commitDuration / totalDuration) * 100;
+  
+  // Constrain position to be within columns (5% to 95% of column width)
+  return Math.max(5, Math.min(95, rawPosition));
 };
 
 /**

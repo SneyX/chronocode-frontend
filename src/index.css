@@ -175,6 +175,7 @@
 .timeline-column {
   min-width: 120px;
   flex-shrink: 0;
+  position: relative;
 }
 
 .timeline-labels {
