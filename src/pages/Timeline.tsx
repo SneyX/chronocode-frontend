@@ -15,7 +15,6 @@ import { Commit, TimelineFilters, TimeScale, GroupBy } from '@/types';
 import { filterCommits } from '@/utils/filter-utils';
 import { fetchCommitsForRepo } from '@/lib/supabase';
 import { useChat } from '@/contexts/chat-context';
-import { ChatProvider } from '@/contexts/chat-context';
 
 const mockCommits: Commit[] = [
   {
@@ -245,7 +244,7 @@ const mockCommits: Commit[] = [
   }
 ];
 
-const TimelineContent: React.FC = () => {
+const TimelinePage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [commits, setCommits] = useState<Commit[]>([]);
   const [filteredCommits, setFilteredCommits] = useState<Commit[]>([]);
@@ -551,12 +550,5 @@ const TimelineContent: React.FC = () => {
   );
 };
 
-const TimelinePage: React.FC = () => {
-  return (
-    <ChatProvider>
-      <TimelineContent />
-    </ChatProvider>
-  );
-};
-
 export default TimelinePage;
+
