@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import Header from '@/components/layout/header';
 import Footer from '@/components/layout/footer';
@@ -9,9 +10,10 @@ import CommitCard from '@/components/ui/commit-card';
 import RepositoryInput from '@/components/ui/repository-input';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Loader2 } from 'lucide-react';
+import { ArrowLeft, Loader2, RefreshCw } from 'lucide-react';
 import { Commit, TimelineFilters, TimeScale, GroupBy } from '@/types';
 import { filterCommits } from '@/utils/filter-utils';
+import { fetchCommitsForRepo, extractRepoNameFromUrl } from '@/lib/supabase';
 
 const mockCommits: Commit[] = [
   {
@@ -247,38 +249,67 @@ const TimelinePage: React.FC = () => {
   const [selectedCommit, setSelectedCommit] = useState<string | undefined>();
   const [expandedCommit, setExpandedCommit] = useState<string | undefined>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const repoParam = searchParams.get('repo');
+  const exampleParam = searchParams.get('example');
   
   useEffect(() => {
-    const fetchCommits = async () => {
+    const fetchData = async () => {
       setIsLoading(true);
       try {
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        setCommits(mockCommits);
-        setFilteredCommits(mockCommits);
+        // Check if we have a repository parameter
+        if (repoParam) {
+          // If example flag is present or no repo name, use mock data
+          if (exampleParam === 'true') {
+            await new Promise(resolve => setTimeout(resolve, 1500));
+            setCommits(mockCommits);
+            toast.info('Showing example data for this repository', {
+              description: 'The actual analysis will be available soon.',
+            });
+          } else {
+            // Fetch actual data from Supabase
+            const repoData = await fetchCommitsForRepo(repoParam);
+            if (repoData && repoData.length > 0) {
+              setCommits(repoData);
+              toast.success(`Loaded ${repoData.length} commits for ${repoParam}`);
+            } else {
+              // If no data found, fall back to example data
+              setCommits(mockCommits);
+              toast.info('No commit data found, showing example data', {
+                description: 'Please try analyzing the repository again.',
+              });
+            }
+          }
+        } else {
+          // No repo parameter, use mock data
+          await new Promise(resolve => setTimeout(resolve, 1500));
+          setCommits(mockCommits);
+        }
       } catch (error) {
         console.error('Error fetching commits:', error);
         toast.error('Failed to load commits', {
           description: 'Please try again later.',
         });
+        setCommits(mockCommits);
       } finally {
         setIsLoading(false);
       }
     };
     
-    fetchCommits();
-  }, []);
+    fetchData();
+  }, [repoParam, exampleParam]);
   
   useEffect(() => {
     setFilteredCommits(filterCommits(commits, filters));
   }, [commits, filters]);
   
-  const handleRepositorySubmit = async (url: string) => {
+  const handleRepositorySubmit = async (url: string, repoName: string) => {
     setIsLoading(true);
     try {
       await new Promise(resolve => setTimeout(resolve, 2000));
       
-      setCommits(mockCommits);
-      setFilteredCommits(mockCommits);
+      // Navigate to the same page but with updated query parameters
+      navigate(`/timeline?repo=${encodeURIComponent(repoName)}&example=true`);
       
       toast.success('Repository analyzed successfully!', {
         description: 'View the timeline below.',
@@ -305,6 +336,30 @@ const TimelinePage: React.FC = () => {
     }, 100);
   };
   
+  const handleRefreshAnalysis = async () => {
+    if (!repoParam) return;
+    
+    setIsLoading(true);
+    try {
+      // In a real scenario, this would trigger a backend process
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      toast.success('Analysis refreshed successfully!', {
+        description: 'New commits have been analyzed.',
+      });
+      
+      // Reload the current page to get fresh data
+      window.location.reload();
+    } catch (error) {
+      console.error('Error refreshing analysis:', error);
+      toast.error('Failed to refresh analysis', {
+        description: 'Please try again later.',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
   const selectedCommitData = selectedCommit 
     ? commits.find(commit => commit.sha === selectedCommit)
     : undefined;
@@ -323,7 +378,22 @@ const TimelinePage: React.FC = () => {
           Back to Home
         </Button>
         
-        <h1 className="text-3xl font-bold mb-6 animate-fade-in">Repository Timeline</h1>
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-3xl font-bold animate-fade-in">
+            {repoParam ? `Timeline: ${repoParam}` : 'Repository Timeline'}
+          </h1>
+          
+          {repoParam && !isLoading && (
+            <Button 
+              onClick={handleRefreshAnalysis}
+              variant="outline"
+              className="animate-fade-in"
+            >
+              <RefreshCw className="mr-2 h-4 w-4" />
+              Refresh Analysis
+            </Button>
+          )}
+        </div>
         
         <div className="mb-8 animate-slide-down">
           <RepositoryInput 

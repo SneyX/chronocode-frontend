@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -7,23 +8,36 @@ import RepositoryInput from '@/components/ui/repository-input';
 import { Button } from '@/components/ui/button';
 import { Sparkles, AlertTriangle, Trophy, Bug, Wrench, ArrowRight } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { checkRepoExists } from '@/lib/supabase';
 
 const Index: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   
-  const handleRepositorySubmit = async (url: string) => {
+  const handleRepositorySubmit = async (url: string, repoName: string) => {
     setIsLoading(true);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Check if repository already exists in our database
+      const repoExists = await checkRepoExists(repoName);
       
-      toast.success('Repository analyzed successfully!', {
-        description: 'You can now view the timeline.',
-      });
-      
-      // Navigate to timeline page
-      navigate('/timeline');
+      if (repoExists) {
+        toast.success('Repository found in our database!', {
+          description: 'Redirecting to the timeline view.',
+        });
+        
+        // Navigate to timeline page with repo name as parameter
+        navigate(`/timeline?repo=${encodeURIComponent(repoName)}`);
+      } else {
+        // Simulate API call for repository analysis
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        toast.success('Repository analyzed successfully!', {
+          description: 'You can now view the timeline with example data.',
+        });
+        
+        // Navigate to timeline page with example data flag
+        navigate(`/timeline?repo=${encodeURIComponent(repoName)}&example=true`);
+      }
     } catch (error) {
       console.error('Error analyzing repository:', error);
       toast.error('Failed to analyze repository', {

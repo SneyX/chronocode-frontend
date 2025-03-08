@@ -5,9 +5,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Search, GitBranch, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { extractRepoNameFromUrl } from '@/lib/supabase';
 
 interface RepositoryInputProps {
-  onSubmit: (url: string) => Promise<void>;
+  onSubmit: (url: string, repoName: string) => Promise<void>;
   isLoading?: boolean;
   className?: string;
 }
@@ -38,8 +39,15 @@ const RepositoryInput: React.FC<RepositoryInputProps> = ({
       return;
     }
     
+    const repoName = extractRepoNameFromUrl(url);
+    
+    if (!repoName) {
+      toast.error('Could not extract repository name from URL');
+      return;
+    }
+    
     try {
-      await onSubmit(url);
+      await onSubmit(url, repoName);
     } catch (error) {
       console.error('Error submitting repository URL:', error);
       toast.error('Failed to process repository. Please try again.');
