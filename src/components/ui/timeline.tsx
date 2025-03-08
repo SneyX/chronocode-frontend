@@ -107,7 +107,9 @@ const Timeline: React.FC<TimelineProps> = ({
                           timeScale
                         );
                         
-                        const analysis = commit.commit_analises[0];
+                        // Support both property names
+                        const analyses = commit.commit_analyses || commit.commit_analises || [];
+                        const analysis = analyses[0];
                         const commitType = analysis?.type || 'CHORE';
                         
                         return (
@@ -140,8 +142,8 @@ const Timeline: React.FC<TimelineProps> = ({
                                 </div>
                                 <Separator />
                                 <div className="p-2 bg-muted/30 text-xs">
-                                  {analysis?.idea || commit.description.substring(0, 100)}
-                                  {(analysis?.idea?.length || commit.description.length) > 100 && '...'}
+                                  {analysis?.idea || commit.description?.substring(0, 100)}
+                                  {(analysis?.idea?.length || commit.description?.length) > 100 && '...'}
                                 </div>
                               </TooltipContent>
                             </Tooltip>

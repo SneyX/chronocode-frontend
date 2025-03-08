@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -25,7 +26,11 @@ const CommitCard: React.FC<CommitCardProps> = ({
   onToggleExpand,
   id,
 }) => {
-  const analysis = commit.commit_analises[0] || null;
+  // Handle both property names for backward compatibility
+  const analyses = commit.commit_analyses || commit.commit_analises || [];
+  const analysis = analyses[0] || null;
+  
+  const commitType = analysis?.type || 'CHORE';
   
   const TypeIcon = {
     'FEATURE': Sparkles,
@@ -33,7 +38,7 @@ const CommitCard: React.FC<CommitCardProps> = ({
     'MILESTONE': Trophy,
     'BUG': Bug,
     'CHORE': Wrench,
-  }[analysis?.type || 'CHORE'];
+  }[commitType];
 
   return (
     <Card 

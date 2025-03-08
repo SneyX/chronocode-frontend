@@ -6,10 +6,13 @@ import { Commit, CommitType, TimelineFilters } from '@/types';
  */
 export const filterCommits = (commits: Commit[], filters: TimelineFilters): Commit[] => {
   return commits.filter(commit => {
+    // Get analyses from either property name
+    const analyses = commit.commit_analyses || commit.commit_analises || [];
+    
     // Filter by type
     if (filters.types.length > 0) {
       // Check if any of the commit analyses match the filter types
-      const hasMatchingType = commit.commit_analises.some(analysis => 
+      const hasMatchingType = analyses.some(analysis => 
         filters.types.includes(analysis.type)
       );
       
@@ -36,10 +39,10 @@ export const filterCommits = (commits: Commit[], filters: TimelineFilters): Comm
       const matchesMessage = commit.message.toLowerCase().includes(searchTermLower);
       const matchesDescription = commit.description.toLowerCase().includes(searchTermLower);
       const matchesAuthor = commit.author.toLowerCase().includes(searchTermLower);
-      const matchesAnalysis = commit.commit_analises.some(analysis => 
-        analysis.title.toLowerCase().includes(searchTermLower) ||
-        analysis.idea.toLowerCase().includes(searchTermLower) ||
-        analysis.description.toLowerCase().includes(searchTermLower)
+      const matchesAnalysis = analyses.some(analysis => 
+        analysis.title?.toLowerCase().includes(searchTermLower) ||
+        analysis.idea?.toLowerCase().includes(searchTermLower) ||
+        analysis.description?.toLowerCase().includes(searchTermLower)
       );
       
       if (!(matchesMessage || matchesDescription || matchesAuthor || matchesAnalysis)) {
@@ -66,8 +69,11 @@ export const groupCommits = (commits: Commit[], groupBy: 'type' | 'author' | 'da
     
     // Group commits by their primary analysis type
     commits.forEach(commit => {
-      if (commit.commit_analises.length > 0) {
-        const primaryType = commit.commit_analises[0].type;
+      // Support both property names
+      const analyses = commit.commit_analyses || commit.commit_analises || [];
+      
+      if (analyses.length > 0) {
+        const primaryType = analyses[0].type;
         grouped[primaryType].push(commit);
       } else {
         // If no analysis, put in CHORE category

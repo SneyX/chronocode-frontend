@@ -1,4 +1,3 @@
-
 // Commit Types
 export type CommitType = 'FEATURE' | 'WARNING' | 'MILESTONE' | 'BUG' | 'CHORE';
 
@@ -26,7 +25,9 @@ export interface Commit {
   message: string;
   url: string;
   description: string;
-  commit_analises: CommitAnalysis[];
+  // Support both property names for backward compatibility
+  commit_analyses?: CommitAnalysis[];
+  commit_analises?: CommitAnalysis[];
 }
 
 // Repository Input
