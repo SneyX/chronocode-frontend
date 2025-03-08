@@ -17,8 +17,10 @@ const Index: React.FC = () => {
   const handleRepositorySubmit = async (url: string, repoName: string) => {
     setIsLoading(true);
     try {
+      console.log('Checking if repository exists:', repoName);
       // Check if repository already exists in our database
       const repoExists = await checkRepoExists(repoName);
+      console.log('Repository exists:', repoExists);
       
       if (repoExists) {
         toast.success('Repository found in our database!', {

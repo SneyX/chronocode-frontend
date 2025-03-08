@@ -259,6 +259,7 @@ const TimelinePage: React.FC = () => {
       try {
         // Check if we have a repository parameter
         if (repoParam) {
+          console.log('Fetching data for repo:', repoParam, 'example:', exampleParam);
           // If example flag is present or no repo name, use mock data
           if (exampleParam === 'true') {
             await new Promise(resolve => setTimeout(resolve, 1500));
@@ -268,12 +269,14 @@ const TimelinePage: React.FC = () => {
             });
           } else {
             // Fetch actual data from Supabase
+            console.log('Fetching real data from Supabase for repo:', repoParam);
             const repoData = await fetchCommitsForRepo(repoParam);
             if (repoData && repoData.length > 0) {
               setCommits(repoData);
               toast.success(`Loaded ${repoData.length} commits for ${repoParam}`);
             } else {
               // If no data found, fall back to example data
+              console.log('No data found in Supabase, using mock data');
               setCommits(mockCommits);
               toast.info('No commit data found, showing example data', {
                 description: 'Please try analyzing the repository again.',
@@ -341,6 +344,7 @@ const TimelinePage: React.FC = () => {
     
     setIsLoading(true);
     try {
+      console.log('Refreshing analysis for repo:', repoParam);
       // In a real scenario, this would trigger a backend process
       await new Promise(resolve => setTimeout(resolve, 2000));
       

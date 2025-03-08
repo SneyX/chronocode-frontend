@@ -13,14 +13,16 @@ export const fetchCommitsForRepo = async (repoName: string): Promise<Commit[]> =
       .from('commits')
       .select(`
         *,
-        commit_analises(*)
+        commit_analyses(*)
       `)
       .eq('repo_name', repoName);
     
     if (error) {
+      console.error('Supabase error:', error);
       throw error;
     }
     
+    console.log('Commits fetched from Supabase:', commits);
     return commits as Commit[];
   } catch (error) {
     console.error('Error fetching commits:', error);
@@ -30,15 +32,18 @@ export const fetchCommitsForRepo = async (repoName: string): Promise<Commit[]> =
 
 export const checkRepoExists = async (repoName: string): Promise<boolean> => {
   try {
+    console.log('Checking if repo exists:', repoName);
     const { count, error } = await supabase
       .from('commits')
       .select('*', { count: 'exact', head: true })
       .eq('repo_name', repoName);
     
     if (error) {
+      console.error('Supabase error:', error);
       throw error;
     }
     
+    console.log('Repo check result:', count);
     return count !== null && count > 0;
   } catch (error) {
     console.error('Error checking if repo exists:', error);

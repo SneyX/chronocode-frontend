@@ -40,6 +40,7 @@ const RepositoryInput: React.FC<RepositoryInputProps> = ({
     }
     
     const repoName = extractRepoNameFromUrl(url);
+    console.log('Extracted repo name:', repoName);
     
     if (!repoName) {
       toast.error('Could not extract repository name from URL');
