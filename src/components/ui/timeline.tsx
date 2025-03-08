@@ -72,7 +72,7 @@ const Timeline: React.FC<TimelineProps> = ({
         </div>
         
         {/* Timeline Body */}
-        <ScrollArea className="flex-grow" ref={scrollAreaRef}>
+        <ScrollArea className="flex-grow h-full" ref={scrollAreaRef}>
           <div className="min-w-fit">
             {/* Render each group */}
             {Object.entries(groupedCommits).map(([groupName, groupCommits], groupIndex) => (
@@ -93,7 +93,7 @@ const Timeline: React.FC<TimelineProps> = ({
                     </div>
                     
                     {/* Timeline Grid for this group */}
-                    <div className="flex-grow relative flex border-b min-h-[100px] group-hover/row:bg-muted/10">
+                    <div className="flex-grow relative flex border-b min-h-[80px] group-hover/row:bg-muted/10">
                       {timeIntervals.map((_, index) => (
                         <div key={index} className="flex-1 border-r last:border-r-0"></div>
                       ))}
