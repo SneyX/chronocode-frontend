@@ -118,7 +118,6 @@ const Timeline: React.FC<TimelineProps> = ({
     }
   }, [highlightedCommits]);
 
-  // Drag to scroll functionality
   const handleMouseDown = (e: React.MouseEvent) => {
     if (timelineContainerRef.current) {
       setIsDragging(true);
@@ -196,7 +195,7 @@ const Timeline: React.FC<TimelineProps> = ({
                 <div key={groupName} className="group/row">
                   <div className="flex">
                     <div className={cn(
-                      "shrink-0 bg-muted/30 p-3 font-medium border-r flex items-center sticky left-0 z-10",
+                      "shrink-0 bg-background/90 backdrop-blur-md p-3 font-medium border-r flex items-center sticky left-0 z-30",
                       isChatOpen ? "w-32" : "w-40"
                     )}>
                       {groupBy === 'type' && (
@@ -231,12 +230,12 @@ const Timeline: React.FC<TimelineProps> = ({
                                     className={cn(
                                       'absolute top-1/2 transform -translate-y-1/2 h-8 w-8 rounded-full',
                                       'flex items-center justify-center transition-all duration-300',
-                                      'z-10 hover:z-20 hover:scale-125 hover:shadow-lg',
+                                      'z-20 hover:z-25 hover:scale-125 hover:shadow-lg',
                                       getCommitTypeColor(commitType),
                                       (selectedCommit === commit.sha || hoveredCommit === commit.sha) && 
-                                        'ring-2 ring-offset-2 ring-primary scale-125 z-20',
+                                        'ring-2 ring-offset-2 ring-primary scale-125 z-25',
                                       isCommitHighlighted && 
-                                        'ring-2 ring-offset-2 ring-yellow-400 scale-125 z-20 highlighted-commit animate-pulse'
+                                        'ring-2 ring-offset-2 ring-yellow-400 scale-125 z-25 highlighted-commit animate-pulse'
                                     )}
                                     style={{ left: `${cluster.position}%` }}
                                     onClick={() => onCommitSelect(commit.sha)}
