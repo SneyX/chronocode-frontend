@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -171,6 +172,7 @@
 /* Timeline scroll area customizations */
 .timeline-scroll-area {
   overflow-x: auto;
+  width: 100%;
 }
 
 .timeline-content {
@@ -179,6 +181,7 @@
 
 .timeline-column {
   min-width: 120px;
+  flex-shrink: 0;
 }
 
 .timeline-label {
@@ -186,6 +189,13 @@
   left: 0;
   z-index: 20;
   background-color: var(--background);
+}
+
+/* Make sure timeline elements are properly sized for horizontal scrolling */
+.timeline-row {
+  display: flex;
+  width: max-content;
+  min-width: 100%;
 }
 
 /* Mobile-first design, will stack the chat from bottom */
