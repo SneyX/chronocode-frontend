@@ -13,7 +13,7 @@ interface FloatingChatButtonProps {
 const FloatingChatButton: React.FC<FloatingChatButtonProps> = ({
   className,
 }) => {
-  const { toggleChat } = useChat();
+  const { toggleChat, isChatOpen } = useChat();
 
   return (
     <Button
@@ -21,12 +21,13 @@ const FloatingChatButton: React.FC<FloatingChatButtonProps> = ({
       variant="default"
       size="icon"
       className={cn(
-        "fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg z-40 transition-all duration-300 hover:scale-105 bg-gradient-to-br from-primary to-primary/80 border border-primary-foreground/10",
+        "fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg z-40 transition-all duration-300 hover:scale-105",
+        isChatOpen ? "bg-primary/90 text-primary-foreground rotate-90" : "bg-gradient-to-br from-violet-500 to-purple-700 border-2 border-purple-300/20",
         className
       )}
       aria-label="Open chat assistant"
     >
-      <MessageCircle className="h-6 w-6" />
+      <MessageCircle className={cn("h-6 w-6", isChatOpen ? "rotate-180" : "")} />
     </Button>
   );
 };
