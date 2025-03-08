@@ -37,7 +37,8 @@ const mockCommits: Commit[] = [
         idea: 'Setting up the foundational structure for the project',
         description: 'This commit establishes the basic project structure, adding essential configuration files and dependencies needed to start development.',
         commit_sha: '1',
-        type: 'MILESTONE'
+        type: 'MILESTONE',
+        epic: 'Project Setup'
       }
     ]
   },
@@ -61,7 +62,8 @@ const mockCommits: Commit[] = [
         idea: 'Implementing secure user authentication',
         description: 'This commit adds a complete authentication system using JWT tokens for secure user sessions. It includes login, registration, and password recovery functionality.',
         commit_sha: '2',
-        type: 'FEATURE'
+        type: 'FEATURE',
+        epic: 'Authentication'
       }
     ]
   },
@@ -85,7 +87,8 @@ const mockCommits: Commit[] = [
         idea: 'Enhancing user experience by providing clearer error messages',
         description: 'This commit improves the error handling during login attempts. It provides more specific error messages to help users understand why their login failed (invalid credentials, account locked, etc).',
         commit_sha: '3',
-        type: 'BUG'
+        type: 'BUG',
+        epic: 'Authentication'
       }
     ]
   },
@@ -109,7 +112,8 @@ const mockCommits: Commit[] = [
         idea: 'Creating a comprehensive user profile management interface',
         description: 'This commit adds a complete user profile page where users can view and edit their personal information, including profile picture, contact details, and preferences.',
         commit_sha: '4',
-        type: 'FEATURE'
+        type: 'FEATURE',
+        epic: 'User Management'
       }
     ]
   },
@@ -133,7 +137,8 @@ const mockCommits: Commit[] = [
         idea: 'Maintaining project health by updating dependencies',
         description: 'This commit updates all npm packages to their latest versions to ensure the project has the latest features, performance improvements, and security patches.',
         commit_sha: '5',
-        type: 'CHORE'
+        type: 'CHORE',
+        epic: 'Project Maintenance'
       }
     ]
   },
@@ -157,7 +162,8 @@ const mockCommits: Commit[] = [
         idea: 'Enhancing security by enforcing strong passwords',
         description: 'This commit adds a password strength checker during user registration to enforce strong password policies. It provides visual feedback to users about their password strength and specific suggestions for improvement.',
         commit_sha: '6',
-        type: 'FEATURE'
+        type: 'FEATURE',
+        epic: 'Authentication'
       }
     ]
   },
@@ -181,7 +187,8 @@ const mockCommits: Commit[] = [
         idea: 'Addressing a critical security vulnerability',
         description: 'This commit fixes a potential Cross-Site Scripting (XSS) vulnerability in the application by properly sanitizing user input and implementing appropriate content security policies.',
         commit_sha: '7',
-        type: 'WARNING'
+        type: 'WARNING',
+        epic: 'Security'
       }
     ]
   },
@@ -205,7 +212,8 @@ const mockCommits: Commit[] = [
         idea: 'Enhancing application speed and responsiveness',
         description: 'This commit significantly improves application performance by optimizing database queries, implementing a robust caching strategy, and reducing unnecessary computations in critical paths.',
         commit_sha: '8',
-        type: 'FEATURE'
+        type: 'FEATURE',
+        epic: 'Performance'
       }
     ]
   },
@@ -229,7 +237,8 @@ const mockCommits: Commit[] = [
         idea: 'First stable production release of the application',
         description: 'This commit marks the first production-ready release (v1.0.0) of the application. It includes final version bumps, documentation updates, and release notes for users.',
         commit_sha: '9',
-        type: 'MILESTONE'
+        type: 'MILESTONE',
+        epic: 'Releases'
       }
     ]
   }
