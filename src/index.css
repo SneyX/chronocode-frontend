@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -154,6 +155,20 @@
   overflow-y: auto;
 }
 
+/* Timeline adjustments when chat is open */
+.chat-open .timeline-labels {
+  font-size: 0.75rem;
+}
+
+.chat-open .timeline-lane {
+  padding-right: 1rem;
+}
+
+/* Container adjustments */
+.container {
+  transition: padding-right 0.3s ease;
+}
+
 /* Mobile-first design, will stack the chat from bottom */
 @media (max-width: 768px) {
   .sidebar-chat {
@@ -161,5 +176,15 @@
     bottom: 0;
     top: auto;
     width: 100%;
+  }
+  
+  /* Reset container padding on mobile when chat is open */
+  .container.pr-\[420px\] {
+    padding-right: 1rem !important;
+  }
+  
+  /* Stack the chat over content on mobile */
+  main.pr-\[420px\] {
+    padding-right: 1rem !important;
   }
 }

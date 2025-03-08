@@ -253,7 +253,7 @@ const TimelinePage: React.FC = () => {
   const [filters, setFilters] = useState<TimelineFilters>({
     types: [],
     authors: [],
-    epics: [], // Initialize empty epics array
+    epics: [],
     dateRange: { from: null, to: null },
     searchTerm: ''
   });
@@ -265,45 +265,41 @@ const TimelinePage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const repoParam = searchParams.get('repo');
   const exampleParam = searchParams.get('example');
-  const { chat } = useChat();
+  const { isChatOpen } = useChat();
 
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        // Check if we have a repository parameter
         if (repoParam) {
           console.log('Fetching data for repo:', repoParam, 'example:', exampleParam);
           
           try {
-            // First check if there's actual data in Supabase for this repo
-            const repoData = await fetchCommitsForRepo(repoParam);
-            
-            if (repoData && repoData.length > 0) {
-              console.log('Found real data in Supabase for repo:', repoParam);
-              setCommits(repoData);
-              toast.success(`Loaded ${repoData.length} commits for ${repoParam}`);
-            } 
-            // Only use example data if explicitly requested or no data found
-            else if (exampleParam === 'true') {
-              console.log('Using example data as requested for repo:', repoParam);
-              await new Promise(resolve => setTimeout(resolve, 1500));
-              setCommits(mockCommits);
-              toast.info('Showing example data for this repository', {
-                description: 'The actual analysis will be available soon.',
-              });
-            } else {
-              // No data found, show empty state
-              console.log('No data found in Supabase for repo:', repoParam);
-              setCommits([]);
-              toast.warning('No commit data found for this repository', {
-                description: 'Please try analyzing the repository again.',
-              });
+            if (repoParam) {
+              const repoData = await fetchCommitsForRepo(repoParam);
+              
+              if (repoData && repoData.length > 0) {
+                console.log('Found real data in Supabase for repo:', repoParam);
+                setCommits(repoData);
+                toast.success(`Loaded ${repoData.length} commits for ${repoParam}`);
+              } else if (exampleParam === 'true') {
+                console.log('Using example data as requested for repo:', repoParam);
+                await new Promise(resolve => setTimeout(resolve, 1500));
+                setCommits(mockCommits);
+                toast.info('Showing example data for this repository', {
+                  description: 'The actual analysis will be available soon.',
+                });
+              } else {
+                console.log('No data found in Supabase for repo:', repoParam);
+                setCommits([]);
+                toast.warning('No commit data found for this repository', {
+                  description: 'Please try analyzing the repository again.',
+                });
+              }
             }
           } catch (error) {
             console.error('Error fetching commits from Supabase:', error);
             if (exampleParam === 'true') {
-              // Fallback to example data if there was an error
               setCommits(mockCommits);
               toast.info('Showing example data for this repository', {
                 description: 'The actual analysis will be available soon.',
@@ -316,7 +312,6 @@ const TimelinePage: React.FC = () => {
             }
           }
         } else {
-          // No repo parameter, show example data
           await new Promise(resolve => setTimeout(resolve, 1500));
           setCommits(mockCommits);
           toast.info('Showing example timeline data', {
@@ -346,18 +341,14 @@ const TimelinePage: React.FC = () => {
     try {
       console.log('Handling repository submit:', repoName, 'exists:', repoExists);
       
-      // First check if we already have data for this repo
       if (repoExists) {
         console.log('Repository already exists in Supabase, navigating...');
-        // If repo exists, navigate directly to timeline with the repo parameter only
         navigate(`/timeline?repo=${encodeURIComponent(repoName)}`);
         
         toast.success('Repository data found!', {
           description: 'Loading timeline from existing data.',
         });
       } else {
-        // If repo doesn't exist, we would normally start analysis
-        // For now, navigate with example=true as a placeholder
         console.log('Repository not found in Supabase, showing example data...');
         await new Promise(resolve => setTimeout(resolve, 2000));
         
@@ -395,14 +386,12 @@ const TimelinePage: React.FC = () => {
     setIsLoading(true);
     try {
       console.log('Refreshing analysis for repo:', repoParam);
-      // In a real scenario, this would trigger a backend process
       await new Promise(resolve => setTimeout(resolve, 2000));
       
       toast.success('Analysis refreshed successfully!', {
         description: 'New commits have been analyzed.',
       });
       
-      // Reload the current page to get fresh data
       window.location.reload();
     } catch (error) {
       console.error('Error refreshing analysis:', error);
@@ -418,14 +407,13 @@ const TimelinePage: React.FC = () => {
     ? commits.find(commit => commit.sha === selectedCommit)
     : undefined;
 
-  // Show chat components only when we have commit data
   const showChatComponents = commits.length > 0;
 
   return (
     <div className="flex flex-col min-h-screen">
       <Header />
       
-      <main className="flex-grow container py-8">
+      <main className={cn("flex-grow container py-8", isChatOpen && "pr-[420px] transition-all duration-300")}>
         <Button
           variant="ghost"
           className="mb-6"
@@ -484,7 +472,7 @@ const TimelinePage: React.FC = () => {
                   groupBy={groupBy}
                   selectedCommit={selectedCommit}
                   onCommitSelect={handleCommitSelect}
-                  className="mb-10 animate-scale-in"
+                  className={cn("mb-10 animate-scale-in", isChatOpen && "chat-open")}
                 />
                 
                 {selectedCommitData && (
