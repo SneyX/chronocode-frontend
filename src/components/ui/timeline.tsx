@@ -1,9 +1,10 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Commit, TimeScale, GroupBy, CommitType } from '@/types';
-import { calculateTimeRange, generateTimeIntervals, formatTimeInterval, calculateCommitPosition } from '@/utils/date-utils';
+import { calculateTimeRange, generateTimeIntervals, formatTimeInterval, calculateCommitPosition, isCommitInInterval } from '@/utils/date-utils';
 import { groupCommits, getCommitTypeColor } from '@/utils/filter-utils';
 import { GitCommit, Sparkles, AlertTriangle, Trophy, Bug, Wrench, Layers } from 'lucide-react';
 import { formatDate } from '@/utils/date-utils';
@@ -73,7 +74,8 @@ const Timeline: React.FC<TimelineProps> = ({
         commit.date,
         timeRange.start,
         timeRange.end,
-        timeScale
+        timeScale,
+        timeIntervals
       );
       
       const roundedPosition = Math.round(position);
@@ -154,9 +156,9 @@ const Timeline: React.FC<TimelineProps> = ({
           {Object.entries(groupedCommits).map(([groupName, groupCommits], groupIndex) => (
             groupCommits.length > 0 && (
               <div key={groupName} className="group/row">
-                <div className="flex sticky left-0 z-10">
+                <div className="flex sticky left-0 z-20">
                   <div className={cn(
-                    "bg-muted/30 p-3 font-medium border-r flex items-center",
+                    "bg-background/90 backdrop-blur-md p-3 font-medium border-r flex items-center z-10",
                     isChatOpen ? "w-32" : "w-40"
                   )}>
                     {groupBy === 'type' && (
@@ -171,11 +173,26 @@ const Timeline: React.FC<TimelineProps> = ({
                   </div>
                   
                   <div className="flex-grow relative flex border-b min-h-[80px] group-hover/row:bg-muted/10">
-                    {timeIntervals.map((_, index) => (
-                      <div key={index} className="flex-1 border-r last:border-r-0"></div>
-                    ))}
+                    {timeIntervals.map((interval, index) => {
+                      const isLastInterval = index === timeIntervals.length - 1;
+                      return (
+                        <div 
+                          key={index} 
+                          className={cn(
+                            "flex-1 relative", 
+                            !isLastInterval && "border-r"
+                          )}
+                        >
+                          {/* Mark the interval boundary for visual reference */}
+                          <div className="absolute inset-0"></div>
+                        </div>
+                      );
+                    })}
                     
                     {clusterCommits(groupCommits, groupName).map((cluster) => {
+                      // Ensure position is constrained within the timeline
+                      const clampedPosition = Math.max(0, Math.min(100, cluster.position));
+                      
                       if (cluster.commits.length === 1) {
                         const commit = cluster.commits[0];
                         const analyses = commit.commit_analyses || commit.commit_analises || [];
@@ -184,8 +201,8 @@ const Timeline: React.FC<TimelineProps> = ({
                         const isCommitHighlighted = isHighlighted(commit.sha);
                         
                         return (
-                          <TooltipProvider key={commit.sha}>
-                            <Tooltip delayDuration={200}>
+                          <TooltipProvider key={commit.sha} delayDuration={200}>
+                            <Tooltip>
                               <TooltipTrigger asChild>
                                 <button
                                   className={cn(
@@ -198,7 +215,7 @@ const Timeline: React.FC<TimelineProps> = ({
                                     isCommitHighlighted && 
                                       'ring-2 ring-offset-2 ring-yellow-400 scale-125 z-20 highlighted-commit animate-pulse'
                                   )}
-                                  style={{ left: `${cluster.position}%` }}
+                                  style={{ left: `${clampedPosition}%` }}
                                   onClick={() => onCommitSelect(commit.sha)}
                                   onMouseEnter={() => setHoveredCommit(commit.sha)}
                                   onMouseLeave={() => setHoveredCommit(null)}
@@ -261,8 +278,8 @@ const Timeline: React.FC<TimelineProps> = ({
                         ).length;
                         
                         return (
-                          <TooltipProvider key={`cluster-${cluster.position}`}>
-                            <Tooltip delayDuration={200}>
+                          <TooltipProvider key={`cluster-${cluster.position}`} delayDuration={200}>
+                            <Tooltip>
                               <TooltipTrigger asChild>
                                 <button
                                   className={cn(
@@ -273,7 +290,7 @@ const Timeline: React.FC<TimelineProps> = ({
                                     hasHighlightedCommits && 
                                       'ring-2 ring-offset-2 ring-yellow-400 highlighted-commit animate-pulse'
                                   )}
-                                  style={{ left: `${cluster.position}%` }}
+                                  style={{ left: `${clampedPosition}%` }}
                                   onClick={() => handleClusterClick(cluster)}
                                 >
                                   <Layers className="h-5 w-5" />

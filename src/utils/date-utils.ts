@@ -1,5 +1,5 @@
 
-import { format, parse, addDays, addWeeks, addMonths, addYears, differenceInDays, differenceInWeeks, differenceInMonths, differenceInYears } from 'date-fns';
+import { format, parse, addDays, addWeeks, addMonths, addYears, differenceInDays, differenceInWeeks, differenceInMonths, differenceInYears, isBefore, isAfter, isSameDay, isSameWeek, isSameMonth, isSameQuarter, isSameYear, startOfDay, startOfWeek, startOfMonth, startOfQuarter, startOfYear, endOfDay, endOfWeek, endOfMonth, endOfQuarter, endOfYear } from 'date-fns';
 import { TimeScale } from '@/types';
 
 /**
@@ -114,19 +114,121 @@ export const formatTimeInterval = (date: Date, scale: TimeScale): string => {
 };
 
 /**
+ * Determines whether a commit falls within a specific time interval based on the scale
+ */
+export const isCommitInInterval = (commitDate: string, intervalStart: Date, intervalEnd: Date, scale: TimeScale): boolean => {
+  const date = new Date(commitDate);
+  
+  // Transform dates based on scale for proper comparison
+  const commitDateStart = getScaleStart(date, scale);
+  const intervalStartFormatted = getScaleStart(intervalStart, scale);
+  const intervalEndFormatted = getScaleEnd(intervalEnd, scale);
+  
+  // Check if commit is within the interval
+  return (
+    (isAfter(commitDateStart, intervalStartFormatted) || isSameScalePeriod(date, intervalStart, scale)) && 
+    (isBefore(commitDateStart, intervalEndFormatted) || isSameScalePeriod(date, intervalEnd, scale))
+  );
+};
+
+/**
+ * Get the start of a time period based on scale
+ */
+export const getScaleStart = (date: Date, scale: TimeScale): Date => {
+  switch (scale) {
+    case 'day':
+      return startOfDay(date);
+    case 'week':
+      return startOfWeek(date);
+    case 'month':
+      return startOfMonth(date);
+    case 'quarter':
+      return startOfQuarter(date);
+    case 'year':
+      return startOfYear(date);
+    default:
+      return startOfDay(date);
+  }
+};
+
+/**
+ * Get the end of a time period based on scale
+ */
+export const getScaleEnd = (date: Date, scale: TimeScale): Date => {
+  switch (scale) {
+    case 'day':
+      return endOfDay(date);
+    case 'week':
+      return endOfWeek(date);
+    case 'month':
+      return endOfMonth(date);
+    case 'quarter':
+      return endOfQuarter(date);
+    case 'year':
+      return endOfYear(date);
+    default:
+      return endOfDay(date);
+  }
+};
+
+/**
+ * Check if two dates are in the same time period based on scale
+ */
+export const isSameScalePeriod = (date1: Date, date2: Date, scale: TimeScale): boolean => {
+  switch (scale) {
+    case 'day':
+      return isSameDay(date1, date2);
+    case 'week':
+      return isSameWeek(date1, date2);
+    case 'month':
+      return isSameMonth(date1, date2);
+    case 'quarter':
+      return isSameQuarter(date1, date2);
+    case 'year':
+      return isSameYear(date1, date2);
+    default:
+      return isSameDay(date1, date2);
+  }
+};
+
+/**
+ * Get the interval index for a commit (which column it should appear in)
+ */
+export const getCommitIntervalIndex = (commitDate: string, intervals: Date[], scale: TimeScale): number => {
+  const date = new Date(commitDate);
+  
+  for (let i = 0; i < intervals.length - 1; i++) {
+    if (isCommitInInterval(commitDate, intervals[i], intervals[i + 1], scale)) {
+      return i;
+    }
+  }
+  
+  // Default to the last interval if no match is found
+  return intervals.length - 1;
+};
+
+/**
  * Calculates the position of a commit on the timeline
  */
 export const calculateCommitPosition = (
   commitDate: string,
   timeStart: Date,
   timeEnd: Date,
-  scale: TimeScale
+  scale: TimeScale,
+  intervals: Date[]
 ): number => {
-  const date = new Date(commitDate);
-  const totalDuration = getDurationByScale(timeStart, timeEnd, scale);
-  const commitDuration = getDurationByScale(timeStart, date, scale);
+  // First, find which interval the commit falls into
+  const intervalIndex = getCommitIntervalIndex(commitDate, intervals, scale);
   
-  return (commitDuration / totalDuration) * 100;
+  // Ensure we don't go out of bounds
+  if (intervalIndex < 0) return 0;
+  if (intervalIndex >= intervals.length - 1) return 100;
+  
+  // Calculate position as percentage based on interval
+  const intervalWidth = 100 / (intervals.length - 1);
+  
+  // Position at the center of the interval
+  return intervalIndex * intervalWidth + intervalWidth / 2;
 };
 
 /**
