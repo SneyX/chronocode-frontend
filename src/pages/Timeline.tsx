@@ -410,13 +410,10 @@ const TimelinePage: React.FC = () => {
   const showChatComponents = commits.length > 0;
 
   return (
-    <div className="flex flex-col min-h-screen overflow-x-hidden">
+    <div className="flex flex-col min-h-screen">
       <Header />
       
-      <main className={cn(
-        "flex-grow container py-8 max-w-full overflow-hidden", 
-        isChatOpen && "pr-[420px] transition-all duration-300"
-      )}>
+      <main className={cn("flex-grow container py-8", isChatOpen && "pr-[420px] transition-all duration-300")}>
         <Button
           variant="ghost"
           className="mb-6"
@@ -458,7 +455,7 @@ const TimelinePage: React.FC = () => {
         ) : (
           <>
             {filteredCommits.length > 0 ? (
-              <div className="overflow-x-hidden">
+              <>
                 <FilterBar 
                   commits={commits}
                   filters={filters}
@@ -469,16 +466,14 @@ const TimelinePage: React.FC = () => {
                   onGroupByChange={setGroupBy}
                 />
                 
-                <div className="overflow-hidden">
-                  <Timeline 
-                    commits={filteredCommits}
-                    timeScale={timeScale}
-                    groupBy={groupBy}
-                    selectedCommit={selectedCommit}
-                    onCommitSelect={handleCommitSelect}
-                    className={cn("mb-10 animate-scale-in", isChatOpen && "chat-open")}
-                  />
-                </div>
+                <Timeline 
+                  commits={filteredCommits}
+                  timeScale={timeScale}
+                  groupBy={groupBy}
+                  selectedCommit={selectedCommit}
+                  onCommitSelect={handleCommitSelect}
+                  className={cn("mb-10 animate-scale-in", isChatOpen && "chat-open")}
+                />
                 
                 {selectedCommitData && (
                   <div className="mt-8 animation-delay-200 animate-fade-in">
@@ -519,7 +514,7 @@ const TimelinePage: React.FC = () => {
                     ))}
                   </div>
                 </div>
-              </div>
+              </>
             ) : (
               <div className="text-center py-12">
                 <p className="text-muted-foreground mb-4">No commits match your current filters.</p>

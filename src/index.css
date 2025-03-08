@@ -169,40 +169,6 @@
   transition: padding-right 0.3s ease;
 }
 
-/* Timeline scroll area customizations */
-.timeline-scroll-area {
-  overflow-x: auto;
-  width: 100%;
-  cursor: grab;
-}
-
-.timeline-scroll-area:active {
-  cursor: grabbing;
-}
-
-.timeline-content {
-  min-width: max-content;
-}
-
-.timeline-column {
-  min-width: 120px;
-  flex-shrink: 0;
-}
-
-.timeline-label {
-  position: sticky;
-  left: 0;
-  z-index: 20;
-  background-color: var(--background);
-}
-
-/* Make sure timeline elements are properly sized for horizontal scrolling */
-.timeline-row {
-  display: flex;
-  width: max-content;
-  min-width: 100%;
-}
-
 /* Mobile-first design, will stack the chat from bottom */
 @media (max-width: 768px) {
   .sidebar-chat {
