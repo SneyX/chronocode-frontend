@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -9,12 +8,13 @@ import FilterBar from '@/components/ui/filter-bar';
 import CommitCard from '@/components/ui/commit-card';
 import RepositoryInput from '@/components/ui/repository-input';
 import FloatingChatButton from '@/components/ui/floating-chat-button';
+import SidebarChat from '@/components/ui/sidebar-chat';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Loader2, RefreshCw } from 'lucide-react';
 import { Commit, TimelineFilters, TimeScale, GroupBy } from '@/types';
 import { filterCommits } from '@/utils/filter-utils';
-import { fetchCommitsForRepo, extractRepoNameFromUrl } from '@/lib/supabase';
+import { fetchCommitsForRepo } from '@/lib/supabase';
 
 const mockCommits: Commit[] = [
   {
@@ -415,8 +415,8 @@ const TimelinePage: React.FC = () => {
     ? commits.find(commit => commit.sha === selectedCommit)
     : undefined;
 
-  // Show chat button only when we have commit data
-  const showChatButton = commits.length > 0;
+  // Show chat components only when we have commit data
+  const showChatComponents = commits.length > 0;
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -530,6 +530,7 @@ const TimelinePage: React.FC = () => {
                 <Button variant="outline" onClick={() => setFilters({
                   types: [],
                   authors: [],
+                  epics: [],
                   dateRange: { from: null, to: null },
                   searchTerm: ''
                 })}>
@@ -541,8 +542,11 @@ const TimelinePage: React.FC = () => {
         )}
       </main>
       
-      {showChatButton && (
-        <FloatingChatButton repoName={repoParam || undefined} />
+      {showChatComponents && (
+        <>
+          <FloatingChatButton repoName={repoParam || undefined} />
+          <SidebarChat repoName={repoParam || undefined} commits={commits} />
+        </>
       )}
       
       <Footer />
