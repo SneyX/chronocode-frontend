@@ -23,7 +23,7 @@ const FloatingChatButton: React.FC<FloatingChatButtonProps> = ({
         variant="default"
         size="icon"
         className={cn(
-          "fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg z-50 transition-all duration-300 hover:scale-105",
+          "fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg z-50 transition-all duration-300 hover:scale-105 bg-gradient-to-br from-primary to-primary/80",
           className
         )}
         aria-label="Open chat assistant"

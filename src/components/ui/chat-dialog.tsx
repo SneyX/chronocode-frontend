@@ -3,7 +3,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Loader2, SendHorizontal, User, Bot, Sparkles } from 'lucide-react';
+import { Loader2, SendHorizontal, User, Bot, Sparkles, MessagesSquare } from 'lucide-react';
 
 interface Message {
   id: string;
@@ -111,35 +111,37 @@ const ChatDialog: React.FC<ChatDialogProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-[500px] p-0 h-[600px] max-h-[80vh] overflow-hidden flex flex-col">
-        <div className="px-6 py-4 border-b bg-muted/30 flex items-center">
-          <Bot className="h-5 w-5 text-primary mr-2" />
-          <h2 className="font-semibold text-lg">Code Intelligence Chat</h2>
-          <div className="ml-auto">
+      <DialogContent className="sm:max-w-[500px] p-0 h-[600px] max-h-[80vh] overflow-hidden flex flex-col bg-gradient-to-br from-background/95 to-background/80 backdrop-blur-sm border border-white/10">
+        <div className="px-6 py-4 border-b bg-primary/5 backdrop-blur-md flex items-center">
+          <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center mr-3">
+            <MessagesSquare className="h-4 w-4 text-primary" />
+          </div>
+          <div>
+            <h2 className="font-semibold text-lg">Code Intelligence Chat</h2>
             {repoName && (
-              <span className="text-xs px-2 py-1 bg-primary/10 text-primary rounded-full">
-                {repoName}
-              </span>
+              <p className="text-xs text-muted-foreground">{repoName}</p>
             )}
           </div>
         </div>
         
-        <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
+        <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 bg-background/30">
           {messages.map((message) => (
             <div
               key={message.id}
               className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
             >
               <div
-                className={`max-w-[80%] rounded-lg p-3 ${
+                className={`max-w-[80%] rounded-lg p-3 shadow-sm ${
                   message.role === 'user'
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-muted'
+                    ? 'bg-gradient-to-r from-primary/90 to-primary/80 text-primary-foreground'
+                    : 'bg-gradient-to-r from-muted/90 to-muted/70 dark:from-muted/30 dark:to-muted/20 border border-border/10'
                 }`}
               >
                 <div className="flex items-start gap-3">
                   {message.role === 'assistant' && (
-                    <Bot className="h-5 w-5 mt-0.5 text-primary flex-shrink-0" />
+                    <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                      <Bot className="h-3.5 w-3.5 text-primary flex-shrink-0" />
+                    </div>
                   )}
                   <div>
                     <p className="text-sm whitespace-pre-wrap">{message.content}</p>
@@ -148,7 +150,9 @@ const ChatDialog: React.FC<ChatDialogProps> = ({
                     </p>
                   </div>
                   {message.role === 'user' && (
-                    <User className="h-5 w-5 mt-0.5 flex-shrink-0" />
+                    <div className="h-6 w-6 rounded-full bg-primary-foreground/10 flex items-center justify-center flex-shrink-0">
+                      <User className="h-3.5 w-3.5 text-primary-foreground flex-shrink-0" />
+                    </div>
                   )}
                 </div>
               </div>
@@ -158,21 +162,21 @@ const ChatDialog: React.FC<ChatDialogProps> = ({
           
           {isLoading && (
             <div className="flex justify-center">
-              <div className="bg-muted rounded-full p-2">
+              <div className="bg-primary/10 rounded-full p-2">
                 <Loader2 className="h-5 w-5 animate-spin text-primary" />
               </div>
             </div>
           )}
         </div>
         
-        <div className="border-t p-4 space-y-4">
+        <div className="border-t p-4 space-y-4 bg-background/30 backdrop-blur-sm">
           <div className="flex flex-wrap gap-2">
             {exampleQuestions.map((question, index) => (
               <Button
                 key={index}
                 variant="outline"
                 size="sm"
-                className="text-xs bg-primary/5 border-primary/20 text-muted-foreground"
+                className="text-xs bg-primary/5 border-primary/20 text-muted-foreground hover:bg-primary/10 hover:text-foreground transition-colors"
                 onClick={() => handleQuestionClick(question)}
               >
                 <Sparkles className="h-3 w-3 mr-1" />
@@ -191,12 +195,13 @@ const ChatDialog: React.FC<ChatDialogProps> = ({
                   handleSendMessage();
                 }
               }}
-              className="flex-grow"
+              className="flex-grow bg-background/50 backdrop-blur-sm border-primary/20 focus-visible:ring-primary/30"
               disabled={isLoading}
             />
             <Button 
               onClick={handleSendMessage} 
               disabled={!input.trim() || isLoading}
+              className="bg-primary hover:bg-primary/90"
             >
               <SendHorizontal className="h-4 w-4" />
             </Button>
