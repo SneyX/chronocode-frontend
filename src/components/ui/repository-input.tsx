@@ -56,7 +56,7 @@ const RepositoryInput: React.FC<RepositoryInputProps> = ({
       
       console.log('Repository exists check:', exists);
       
-      await onSubmit(url, repoName, exists);
+      await onSubmit(url, repoName);
     } catch (error) {
       console.error('Error submitting repository URL:', error);
       toast.error('Failed to process repository. Please try again.');

@@ -6,9 +6,14 @@ import Header from '@/components/layout/header';
 import Footer from '@/components/layout/footer';
 import RepositoryInput from '@/components/ui/repository-input';
 import { Button } from '@/components/ui/button';
-import { Sparkles, AlertTriangle, Trophy, Bug, Wrench, ArrowRight } from 'lucide-react';
+import { 
+  Sparkles, AlertTriangle, Trophy, Bug, Wrench, ArrowRight, 
+  GitGraph, Search, MessageSquareText, FileCode, Brain, MessageCircleQuestion
+} from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { checkRepoExists } from '@/lib/supabase';
+import FeaturesSection from '@/components/sections/features-section';
+import ChatSection from '@/components/sections/chat-section';
 
 const Index: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -96,6 +101,12 @@ const Index: React.FC = () => {
             </div>
           </div>
         </section>
+        
+        {/* Features Section */}
+        <FeaturesSection />
+        
+        {/* Chat Section */}
+        <ChatSection />
         
         <section className="py-16 bg-muted/30">
           <div className="container px-4">
