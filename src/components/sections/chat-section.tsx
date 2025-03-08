@@ -1,9 +1,11 @@
 
 import React, { useState } from 'react';
-import { MessageCircle, SendHorizontal, User, Bot, HelpCircle } from 'lucide-react';
+import { MessageCircle, SendHorizontal, User, Bot, HelpCircle, GitCommit } from 'lucide-react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import CommitModal from '@/components/ui/commit-modal';
+import { toast } from 'sonner';
 
 type Message = {
   id: number;
@@ -11,6 +13,185 @@ type Message = {
   sender: 'user' | 'bot';
   relatedCommits?: string[];
 };
+
+// Mock commits for demonstration (would come from props in a real app)
+const mockCommits = [
+  {
+    sha: '1',
+    created_at: '2023-01-01T00:00:00Z',
+    repo_name: 'example/repo',
+    author: 'developer1',
+    author_url: 'https://github.com/developer1',
+    author_email: 'dev1@example.com',
+    date: '2023-01-01',
+    message: 'Initial project setup',
+    url: 'https://github.com/example/repo/commit/1',
+    description: 'Set up project structure and dependencies',
+    commit_analyses: [
+      {
+        id: '1',
+        created_at: '2023-01-01T00:00:00Z',
+        repo_name: 'example/repo',
+        title: 'Project Initialization',
+        idea: 'Setting up the foundation for the project',
+        description: 'Created basic structure with core dependencies',
+        commit_sha: '1',
+        type: 'CHORE',
+        epic: 'Project Setup'
+      }
+    ]
+  },
+  {
+    sha: '2',
+    created_at: '2023-01-02T00:00:00Z',
+    repo_name: 'example/repo',
+    author: 'developer2',
+    author_url: 'https://github.com/developer2',
+    author_email: 'dev2@example.com',
+    date: '2023-01-02',
+    message: 'Implement authentication system',
+    url: 'https://github.com/example/repo/commit/2',
+    description: 'Added login and registration functionality',
+    commit_analyses: [
+      {
+        id: '2',
+        created_at: '2023-01-02T00:00:00Z',
+        repo_name: 'example/repo',
+        title: 'Authentication Implementation',
+        idea: 'Securing user access with a robust auth system',
+        description: 'Implemented JWT-based authentication flow',
+        commit_sha: '2',
+        type: 'FEATURE',
+        epic: 'User Authentication'
+      }
+    ]
+  },
+  {
+    sha: '3',
+    created_at: '2023-01-03T00:00:00Z',
+    repo_name: 'example/repo',
+    author: 'developer1',
+    author_url: 'https://github.com/developer1',
+    author_email: 'dev1@example.com',
+    date: '2023-01-03',
+    message: 'Enhance authentication security',
+    url: 'https://github.com/example/repo/commit/3',
+    description: 'Improved password hashing and session management',
+    commit_analyses: [
+      {
+        id: '3',
+        created_at: '2023-01-03T00:00:00Z',
+        repo_name: 'example/repo',
+        title: 'Security Enhancements',
+        idea: 'Strengthening authentication security measures',
+        description: 'Upgraded password hashing and added brute force protection',
+        commit_sha: '3',
+        type: 'FEATURE',
+        epic: 'User Authentication'
+      }
+    ]
+  },
+  {
+    sha: '6',
+    created_at: '2023-01-06T00:00:00Z',
+    repo_name: 'example/repo',
+    author: 'developer3',
+    author_url: 'https://github.com/developer3',
+    author_email: 'dev3@example.com',
+    date: '2023-01-06',
+    message: 'Fix authentication edge cases',
+    url: 'https://github.com/example/repo/commit/6',
+    description: 'Resolved issues with auth token refresh and expired sessions',
+    commit_analyses: [
+      {
+        id: '6',
+        created_at: '2023-01-06T00:00:00Z',
+        repo_name: 'example/repo',
+        title: 'Auth Bug Fixes',
+        idea: 'Resolving edge cases in authentication flow',
+        description: 'Fixed token refresh mechanism and session handling',
+        commit_sha: '6',
+        type: 'BUG',
+        epic: 'User Authentication'
+      }
+    ]
+  },
+  {
+    sha: '7',
+    created_at: '2023-01-07T00:00:00Z',
+    repo_name: 'example/repo',
+    author: 'developer2',
+    author_url: 'https://github.com/developer2',
+    author_email: 'dev2@example.com',
+    date: '2023-01-07',
+    message: 'Implement XSS protection',
+    url: 'https://github.com/example/repo/commit/7',
+    description: 'Added input sanitization and CSP headers',
+    commit_analyses: [
+      {
+        id: '7',
+        created_at: '2023-01-07T00:00:00Z',
+        repo_name: 'example/repo',
+        title: 'Security Improvements',
+        idea: 'Preventing XSS attacks with robust protection',
+        description: 'Implemented input validation and content security policy',
+        commit_sha: '7',
+        type: 'FEATURE',
+        epic: 'Security'
+      }
+    ]
+  },
+  {
+    sha: '8',
+    created_at: '2023-01-08T00:00:00Z',
+    repo_name: 'example/repo',
+    author: 'developer1',
+    author_url: 'https://github.com/developer1',
+    author_email: 'dev1@example.com',
+    date: '2023-01-08',
+    message: 'Optimize database queries',
+    url: 'https://github.com/example/repo/commit/8',
+    description: 'Improved query performance with indexes and caching',
+    commit_analyses: [
+      {
+        id: '8',
+        created_at: '2023-01-08T00:00:00Z',
+        repo_name: 'example/repo',
+        title: 'Performance Optimization',
+        idea: 'Boosting application speed with efficient queries',
+        description: 'Added database indexes and implemented query caching',
+        commit_sha: '8',
+        type: 'FEATURE',
+        epic: 'Performance'
+      }
+    ]
+  },
+  {
+    sha: '9',
+    created_at: '2023-01-09T00:00:00Z',
+    repo_name: 'example/repo',
+    author: 'developer3',
+    author_url: 'https://github.com/developer3',
+    author_email: 'dev3@example.com',
+    date: '2023-01-09',
+    message: 'Version 1.0.0 release',
+    url: 'https://github.com/example/repo/commit/9',
+    description: 'Final preparations for initial stable release',
+    commit_analyses: [
+      {
+        id: '9',
+        created_at: '2023-01-09T00:00:00Z',
+        repo_name: 'example/repo',
+        title: 'Stable Release',
+        idea: 'Launching the first stable version of the application',
+        description: 'Finalized documentation and version bumps for 1.0.0 release',
+        commit_sha: '9',
+        type: 'MILESTONE',
+        epic: 'Release'
+      }
+    ]
+  }
+];
 
 // Predefined questions with their responses and related commits
 const predefinedQuestions = [
@@ -41,6 +222,9 @@ const ChatSection: React.FC = () => {
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedCommits, setSelectedCommits] = useState<string[]>([]);
+  const [currentQuestion, setCurrentQuestion] = useState<string | null>(null);
 
   const handleSendMessage = () => {
     if (!input.trim()) return;
@@ -53,6 +237,7 @@ const ChatSection: React.FC = () => {
     };
     
     setMessages([...messages, userMessage]);
+    setCurrentQuestion(input);
     setInput('');
     setIsLoading(true);
     
@@ -88,8 +273,20 @@ const ChatSection: React.FC = () => {
       };
       
       setMessages(prev => [...prev, botMessage]);
+      
+      if (relatedCommits && relatedCommits.length > 0) {
+        toast.success(`Found ${relatedCommits.length} related commits!`, {
+          description: "Click on 'View Commits' to see details."
+        });
+      }
+      
       setIsLoading(false);
     }, 1000);
+  };
+
+  const handleViewCommits = (commitIds: string[]) => {
+    setSelectedCommits(commitIds);
+    setIsModalOpen(true);
   };
 
   const handlePredefinedClick = (question: string) => {
@@ -103,6 +300,7 @@ const ChatSection: React.FC = () => {
     };
     
     setMessages([...messages, userMessage]);
+    setCurrentQuestion(question);
     setIsLoading(true);
     
     // Find the predefined response
@@ -118,6 +316,13 @@ const ChatSection: React.FC = () => {
         };
         
         setMessages(prev => [...prev, botMessage]);
+        
+        if (matchedQuestion.relatedCommits && matchedQuestion.relatedCommits.length > 0) {
+          toast.success(`Found ${matchedQuestion.relatedCommits.length} related commits!`, {
+            description: "Click on 'View Commits' to see details."
+          });
+        }
+        
         setIsLoading(false);
       }, 1000);
     }
@@ -194,8 +399,19 @@ const ChatSection: React.FC = () => {
                           <div>
                             <p>{message.text}</p>
                             {message.relatedCommits && message.relatedCommits.length > 0 && (
-                              <div className="mt-2 text-xs opacity-80">
-                                Relevant commits: {message.relatedCommits.join(', ')}
+                              <div className="mt-2 flex items-center">
+                                <span className="text-xs opacity-80 mr-2">
+                                  {message.relatedCommits.length} relevant commits found
+                                </span>
+                                <Button 
+                                  variant="outline" 
+                                  size="sm" 
+                                  className="h-7 text-xs"
+                                  onClick={() => handleViewCommits(message.relatedCommits!)}
+                                >
+                                  <GitCommit className="h-3 w-3 mr-1" />
+                                  View Commits
+                                </Button>
                               </div>
                             )}
                           </div>
@@ -235,6 +451,15 @@ const ChatSection: React.FC = () => {
           </Card>
         </div>
       </div>
+      
+      {/* Modal for displaying commits */}
+      <CommitModal 
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        commits={mockCommits}
+        commitIds={selectedCommits}
+        question={currentQuestion}
+      />
     </section>
   );
 };

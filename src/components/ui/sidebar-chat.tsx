@@ -6,9 +6,10 @@ import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import { Commit } from '@/types';
-import { X, Send, Loader2, MessageCircle, CheckCircle, HelpCircle } from 'lucide-react';
+import { X, Send, Loader2, MessageCircle, HelpCircle, GitCommit } from 'lucide-react';
 import { toast } from 'sonner';
 import { useChat } from '@/contexts/chat-context';
+import CommitModal from '@/components/ui/commit-modal';
 
 interface Message {
   id: string;
@@ -87,6 +88,8 @@ const SidebarChat: React.FC<SidebarChatProps> = ({
   ]);
   const [inputValue, setInputValue] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedCommits, setSelectedCommits] = useState<string[]>([]);
   
   useEffect(() => {
     if (messagesEndRef.current) {
@@ -140,7 +143,7 @@ const SidebarChat: React.FC<SidebarChatProps> = ({
       setHighlightedCommits(matchedResponse.relatedCommits);
       
       toast.success('Found relevant commits!', {
-        description: `Highlighting ${matchedResponse.relatedCommits.length} related commits in the timeline.`
+        description: `Click 'View Commits' to see ${matchedResponse.relatedCommits.length} related commits.`
       });
     } else {
       const botMessage: Message = {
@@ -155,6 +158,11 @@ const SidebarChat: React.FC<SidebarChatProps> = ({
     }
     
     setIsLoading(false);
+  };
+
+  const handleViewCommits = (commitIds: string[]) => {
+    setSelectedCommits(commitIds);
+    setIsModalOpen(true);
   };
 
   const handlePredefinedQuestion = async (question: string, response: string, relatedCommits: string[]) => {
@@ -186,7 +194,7 @@ const SidebarChat: React.FC<SidebarChatProps> = ({
     setHighlightedCommits(relatedCommits);
     
     toast.success('Found relevant commits!', {
-      description: `Highlighting ${relatedCommits.length} related commits in the timeline.`
+      description: `Click 'View Commits' to see ${relatedCommits.length} related commits.`
     });
     
     setIsLoading(false);
@@ -252,8 +260,19 @@ const SidebarChat: React.FC<SidebarChatProps> = ({
             >
               <p className="text-sm">{message.content}</p>
               {message.relatedCommits && message.relatedCommits.length > 0 && (
-                <div className="mt-2 text-xs opacity-80">
-                  Related to {message.relatedCommits.length} commit{message.relatedCommits.length > 1 ? 's' : ''}
+                <div className="mt-2 flex items-center">
+                  <span className="text-xs opacity-80 mr-2">
+                    {message.relatedCommits.length} commit{message.relatedCommits.length > 1 ? 's' : ''}
+                  </span>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="h-7 text-xs"
+                    onClick={() => handleViewCommits(message.relatedCommits!)}
+                  >
+                    <GitCommit className="h-3 w-3 mr-1" />
+                    View Commits
+                  </Button>
                 </div>
               )}
             </div>
@@ -282,6 +301,15 @@ const SidebarChat: React.FC<SidebarChatProps> = ({
           </Button>
         </div>
       </div>
+      
+      {/* Modal for displaying commits */}
+      <CommitModal 
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        commits={commits}
+        commitIds={selectedCommits}
+        question={messages.find(m => m.relatedCommits === selectedCommits)?.content || null}
+      />
     </div>
   );
 };
