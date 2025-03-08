@@ -1,0 +1,432 @@
+
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
+import Header from '@/components/layout/header';
+import Footer from '@/components/layout/footer';
+import Timeline from '@/components/ui/timeline';
+import FilterBar from '@/components/ui/filter-bar';
+import CommitCard from '@/components/ui/commit-card';
+import RepositoryInput from '@/components/ui/repository-input';
+import { Separator } from '@/components/ui/separator';
+import { Button } from '@/components/ui/button';
+import { ArrowLeft, Loader2 } from 'lucide-react';
+import { Commit, TimelineFilters, TimeScale, GroupBy } from '@/types';
+import { filterCommits } from '@/utils/filter-utils';
+
+// Mock data for demonstration
+const mockCommits: Commit[] = [
+  {
+    sha: '1',
+    created_at: '2023-05-10T10:00:00Z',
+    repo_name: 'owner/repo',
+    author: 'developer1',
+    author_url: 'https://github.com/developer1',
+    author_email: 'dev1@example.com',
+    date: '2023-05-10T10:00:00Z',
+    message: 'Initial commit',
+    url: 'https://github.com/owner/repo/commit/1',
+    description: 'Set up project structure and dependencies',
+    commit_analises: [
+      {
+        id: 'a1',
+        created_at: '2023-05-10T11:00:00Z',
+        repo_name: 'owner/repo',
+        title: 'Project Initialization',
+        idea: 'Setting up the foundational structure for the project',
+        description: 'This commit establishes the basic project structure, adding essential configuration files and dependencies needed to start development.',
+        commit_sha: '1',
+        type: 'MILESTONE'
+      }
+    ]
+  },
+  {
+    sha: '2',
+    created_at: '2023-05-12T10:00:00Z',
+    repo_name: 'owner/repo',
+    author: 'developer2',
+    author_url: 'https://github.com/developer2',
+    author_email: 'dev2@example.com',
+    date: '2023-05-12T10:00:00Z',
+    message: 'Add authentication module',
+    url: 'https://github.com/owner/repo/commit/2',
+    description: 'Implement user authentication with JWT',
+    commit_analises: [
+      {
+        id: 'a2',
+        created_at: '2023-05-12T11:00:00Z',
+        repo_name: 'owner/repo',
+        title: 'User Authentication System',
+        idea: 'Implementing secure user authentication',
+        description: 'This commit adds a complete authentication system using JWT tokens for secure user sessions. It includes login, registration, and password recovery functionality.',
+        commit_sha: '2',
+        type: 'FEATURE'
+      }
+    ]
+  },
+  {
+    sha: '3',
+    created_at: '2023-05-15T10:00:00Z',
+    repo_name: 'owner/repo',
+    author: 'developer1',
+    author_url: 'https://github.com/developer1',
+    author_email: 'dev1@example.com',
+    date: '2023-05-15T10:00:00Z',
+    message: 'Fix login error handling',
+    url: 'https://github.com/owner/repo/commit/3',
+    description: 'Improve error messages on login failure',
+    commit_analises: [
+      {
+        id: 'a3',
+        created_at: '2023-05-15T11:00:00Z',
+        repo_name: 'owner/repo',
+        title: 'Login Error Handling Improvement',
+        idea: 'Enhancing user experience by providing clearer error messages',
+        description: 'This commit improves the error handling during login attempts. It provides more specific error messages to help users understand why their login failed (invalid credentials, account locked, etc).',
+        commit_sha: '3',
+        type: 'BUG'
+      }
+    ]
+  },
+  {
+    sha: '4',
+    created_at: '2023-05-20T10:00:00Z',
+    repo_name: 'owner/repo',
+    author: 'developer3',
+    author_url: 'https://github.com/developer3',
+    author_email: 'dev3@example.com',
+    date: '2023-05-20T10:00:00Z',
+    message: 'Add user profile page',
+    url: 'https://github.com/owner/repo/commit/4',
+    description: 'Create user profile page with edit functionality',
+    commit_analises: [
+      {
+        id: 'a4',
+        created_at: '2023-05-20T11:00:00Z',
+        repo_name: 'owner/repo',
+        title: 'User Profile Page Implementation',
+        idea: 'Creating a comprehensive user profile management interface',
+        description: 'This commit adds a complete user profile page where users can view and edit their personal information, including profile picture, contact details, and preferences.',
+        commit_sha: '4',
+        type: 'FEATURE'
+      }
+    ]
+  },
+  {
+    sha: '5',
+    created_at: '2023-05-25T10:00:00Z',
+    repo_name: 'owner/repo',
+    author: 'developer2',
+    author_url: 'https://github.com/developer2',
+    author_email: 'dev2@example.com',
+    date: '2023-05-25T10:00:00Z',
+    message: 'Update dependencies',
+    url: 'https://github.com/owner/repo/commit/5',
+    description: 'Update all npm packages to latest versions',
+    commit_analises: [
+      {
+        id: 'a5',
+        created_at: '2023-05-25T11:00:00Z',
+        repo_name: 'owner/repo',
+        title: 'Dependency Update',
+        idea: 'Maintaining project health by updating dependencies',
+        description: 'This commit updates all npm packages to their latest versions to ensure the project has the latest features, performance improvements, and security patches.',
+        commit_sha: '5',
+        type: 'CHORE'
+      }
+    ]
+  },
+  {
+    sha: '6',
+    created_at: '2023-06-01T10:00:00Z',
+    repo_name: 'owner/repo',
+    author: 'developer1',
+    author_url: 'https://github.com/developer1',
+    author_email: 'dev1@example.com',
+    date: '2023-06-01T10:00:00Z',
+    message: 'Implement password strength checker',
+    url: 'https://github.com/owner/repo/commit/6',
+    description: 'Add functionality to check password strength during registration',
+    commit_analises: [
+      {
+        id: 'a6',
+        created_at: '2023-06-01T11:00:00Z',
+        repo_name: 'owner/repo',
+        title: 'Password Strength Validation',
+        idea: 'Enhancing security by enforcing strong passwords',
+        description: 'This commit adds a password strength checker during user registration to enforce strong password policies. It provides visual feedback to users about their password strength and specific suggestions for improvement.',
+        commit_sha: '6',
+        type: 'FEATURE'
+      }
+    ]
+  },
+  {
+    sha: '7',
+    created_at: '2023-06-05T10:00:00Z',
+    repo_name: 'owner/repo',
+    author: 'developer3',
+    author_url: 'https://github.com/developer3',
+    author_email: 'dev3@example.com',
+    date: '2023-06-05T10:00:00Z',
+    message: 'Fix potential XSS vulnerability',
+    url: 'https://github.com/owner/repo/commit/7',
+    description: 'Address XSS vulnerability in user input handling',
+    commit_analises: [
+      {
+        id: 'a7',
+        created_at: '2023-06-05T11:00:00Z',
+        repo_name: 'owner/repo',
+        title: 'XSS Vulnerability Fix',
+        idea: 'Addressing a critical security vulnerability',
+        description: 'This commit fixes a potential Cross-Site Scripting (XSS) vulnerability in the application by properly sanitizing user input and implementing appropriate content security policies.',
+        commit_sha: '7',
+        type: 'WARNING'
+      }
+    ]
+  },
+  {
+    sha: '8',
+    created_at: '2023-06-10T10:00:00Z',
+    repo_name: 'owner/repo',
+    author: 'developer2',
+    author_url: 'https://github.com/developer2',
+    author_email: 'dev2@example.com',
+    date: '2023-06-10T10:00:00Z',
+    message: 'Improve application performance',
+    url: 'https://github.com/owner/repo/commit/8',
+    description: 'Optimize database queries and implement caching',
+    commit_analises: [
+      {
+        id: 'a8',
+        created_at: '2023-06-10T11:00:00Z',
+        repo_name: 'owner/repo',
+        title: 'Performance Optimization',
+        idea: 'Enhancing application speed and responsiveness',
+        description: 'This commit significantly improves application performance by optimizing database queries, implementing a robust caching strategy, and reducing unnecessary computations in critical paths.',
+        commit_sha: '8',
+        type: 'FEATURE'
+      }
+    ]
+  },
+  {
+    sha: '9',
+    created_at: '2023-06-15T10:00:00Z',
+    repo_name: 'owner/repo',
+    author: 'developer1',
+    author_url: 'https://github.com/developer1',
+    author_email: 'dev1@example.com',
+    date: '2023-06-15T10:00:00Z',
+    message: 'Release v1.0.0',
+    url: 'https://github.com/owner/repo/commit/9',
+    description: 'Prepare for initial production release',
+    commit_analises: [
+      {
+        id: 'a9',
+        created_at: '2023-06-15T11:00:00Z',
+        repo_name: 'owner/repo',
+        title: 'Version 1.0.0 Release',
+        idea: 'First stable production release of the application',
+        description: 'This commit marks the first production-ready release (v1.0.0) of the application. It includes final version bumps, documentation updates, and release notes for users.',
+        commit_sha: '9',
+        type: 'MILESTONE'
+      }
+    ]
+  }
+];
+
+const TimelinePage: React.FC = () => {
+  const [isLoading, setIsLoading] = useState(true);
+  const [commits, setCommits] = useState<Commit[]>([]);
+  const [filteredCommits, setFilteredCommits] = useState<Commit[]>([]);
+  const [filters, setFilters] = useState<TimelineFilters>({
+    types: [],
+    authors: [],
+    dateRange: { from: null, to: null },
+    searchTerm: ''
+  });
+  const [timeScale, setTimeScale] = useState<TimeScale>('week');
+  const [groupBy, setGroupBy] = useState<GroupBy>('type');
+  const [selectedCommit, setSelectedCommit] = useState<string | undefined>();
+  const [expandedCommit, setExpandedCommit] = useState<string | undefined>();
+  const navigate = useNavigate();
+  
+  useEffect(() => {
+    // Simulate API call to fetch commits
+    const fetchCommits = async () => {
+      setIsLoading(true);
+      try {
+        // In a real app, this would be an API call
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        setCommits(mockCommits);
+        setFilteredCommits(mockCommits);
+      } catch (error) {
+        console.error('Error fetching commits:', error);
+        toast.error('Failed to load commits', {
+          description: 'Please try again later.',
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchCommits();
+  }, []);
+  
+  useEffect(() => {
+    setFilteredCommits(filterCommits(commits, filters));
+  }, [commits, filters]);
+  
+  const handleRepositorySubmit = async (url: string) => {
+    setIsLoading(true);
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Replace commits with new data
+      setCommits(mockCommits);
+      setFilteredCommits(mockCommits);
+      
+      toast.success('Repository analyzed successfully!', {
+        description: 'View the timeline below.',
+      });
+    } catch (error) {
+      console.error('Error analyzing repository:', error);
+      toast.error('Failed to analyze repository', {
+        description: 'Please try again later.',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  const handleCommitSelect = (commitSha: string) => {
+    setSelectedCommit(commitSha);
+    setExpandedCommit(commitSha);
+    
+    // Scroll to the commit card if it exists
+    setTimeout(() => {
+      const commitCard = document.getElementById(`commit-${commitSha}`);
+      if (commitCard) {
+        commitCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }, 100);
+  };
+  
+  const selectedCommitData = selectedCommit 
+    ? commits.find(commit => commit.sha === selectedCommit)
+    : undefined;
+
+  return (
+    <div className="flex flex-col min-h-screen">
+      <Header />
+      
+      <main className="flex-grow container py-8">
+        <Button
+          variant="ghost"
+          className="mb-6"
+          onClick={() => navigate('/')}
+        >
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back to Home
+        </Button>
+        
+        <h1 className="text-3xl font-bold mb-6 animate-fade-in">Repository Timeline</h1>
+        
+        <div className="mb-8 animate-slide-down">
+          <RepositoryInput 
+            onSubmit={handleRepositorySubmit} 
+            isLoading={isLoading}
+          />
+        </div>
+        
+        {isLoading ? (
+          <div className="flex flex-col items-center justify-center py-20">
+            <Loader2 className="h-12 w-12 text-primary animate-spin mb-4" />
+            <p className="text-muted-foreground">Analyzing repository commits...</p>
+          </div>
+        ) : (
+          <>
+            {filteredCommits.length > 0 ? (
+              <>
+                <FilterBar 
+                  commits={commits}
+                  filters={filters}
+                  onFilterChange={setFilters}
+                  timeScale={timeScale}
+                  onTimeScaleChange={setTimeScale}
+                  groupBy={groupBy}
+                  onGroupByChange={setGroupBy}
+                />
+                
+                <Timeline 
+                  commits={filteredCommits}
+                  timeScale={timeScale}
+                  groupBy={groupBy}
+                  selectedCommit={selectedCommit}
+                  onCommitSelect={handleCommitSelect}
+                  className="mb-10 animate-scale-in"
+                />
+                
+                {selectedCommitData && (
+                  <div className="mt-8 animation-delay-200 animate-fade-in">
+                    <h2 className="text-xl font-semibold mb-4">Selected Commit</h2>
+                    <CommitCard 
+                      id={`commit-${selectedCommitData.sha}`}
+                      commit={selectedCommitData}
+                      isExpanded={expandedCommit === selectedCommitData.sha}
+                      onToggleExpand={() => {
+                        if (expandedCommit === selectedCommitData.sha) {
+                          setExpandedCommit(undefined);
+                        } else {
+                          setExpandedCommit(selectedCommitData.sha);
+                        }
+                      }}
+                    />
+                  </div>
+                )}
+                
+                <div className="mt-8">
+                  <h2 className="text-xl font-semibold mb-4">Recent Commits</h2>
+                  <div className="grid grid-cols-1 gap-4 animation-delay-300 animate-fade-in">
+                    {filteredCommits.slice(0, 5).map((commit) => (
+                      <CommitCard 
+                        key={commit.sha}
+                        id={`commit-${commit.sha}`}
+                        commit={commit}
+                        isExpanded={expandedCommit === commit.sha}
+                        onToggleExpand={() => {
+                          if (expandedCommit === commit.sha) {
+                            setExpandedCommit(undefined);
+                          } else {
+                            setExpandedCommit(commit.sha);
+                          }
+                        }}
+                        className={selectedCommit === commit.sha ? 'ring-2 ring-primary' : ''}
+                      />
+                    ))}
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div className="text-center py-12">
+                <p className="text-muted-foreground mb-4">No commits match your current filters.</p>
+                <Button variant="outline" onClick={() => setFilters({
+                  types: [],
+                  authors: [],
+                  dateRange: { from: null, to: null },
+                  searchTerm: ''
+                })}>
+                  Clear Filters
+                </Button>
+              </div>
+            )}
+          </>
+        )}
+      </main>
+      
+      <Footer />
+    </div>
+  );
+};
+
+export default TimelinePage;
