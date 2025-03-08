@@ -15,6 +15,8 @@ import { ArrowLeft, Loader2, RefreshCw } from 'lucide-react';
 import { Commit, TimelineFilters, TimeScale, GroupBy } from '@/types';
 import { filterCommits } from '@/utils/filter-utils';
 import { fetchCommitsForRepo } from '@/lib/supabase';
+import { useChat } from '@/contexts/chat-context';
+import { cn } from '@/lib/utils';
 
 const mockCommits: Commit[] = [
   {
@@ -263,7 +265,8 @@ const TimelinePage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const repoParam = searchParams.get('repo');
   const exampleParam = searchParams.get('example');
-  
+  const { chat } = useChat();
+
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);

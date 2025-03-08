@@ -44,7 +44,7 @@ const Timeline: React.FC<TimelineProps> = ({
   const [openClusterDialog, setOpenClusterDialog] = useState(false);
   const [selectedCluster, setSelectedCluster] = useState<ClusteredCommit | null>(null);
   
-  const { highlightedCommits, currentQuestion } = useChat();
+  const { highlightedCommits, currentQuestion, isChatOpen } = useChat();
   
   useEffect(() => {
     const range = calculateTimeRange(commits, timeScale);
@@ -117,21 +117,27 @@ const Timeline: React.FC<TimelineProps> = ({
   }, [highlightedCommits]);
 
   return (
-    <div className="w-full h-full flex flex-col bg-card rounded-lg border shadow-sm overflow-hidden">
+    <div className={cn(
+      "w-full h-full flex flex-col bg-card rounded-lg border shadow-sm overflow-hidden",
+      className
+    )}>
       {currentQuestion && highlightedCommits.length > 0 && (
         <div className="bg-muted/50 px-4 py-2 border-b flex items-center justify-between">
           <div className="flex items-center">
             <span className="text-sm font-medium mr-2">Filtered by:</span>
-            <span className="text-sm italic">"{currentQuestion}"</span>
+            <span className="text-sm italic truncate max-w-[200px]">"{currentQuestion}"</span>
           </div>
-          <Badge variant="outline" className="ml-2">
+          <Badge variant="outline" className="ml-2 shrink-0">
             {highlightedCommits.length} commit{highlightedCommits.length > 1 ? 's' : ''}
           </Badge>
         </div>
       )}
       
       <div className="flex-none bg-muted/30 border-b">
-        <div className="flex pl-40">
+        <div className={cn(
+          "flex",
+          isChatOpen ? "pl-32" : "pl-40"
+        )}>
           {timeIntervals.map((interval, index) => (
             <div 
               key={index} 
@@ -149,7 +155,10 @@ const Timeline: React.FC<TimelineProps> = ({
             groupCommits.length > 0 && (
               <div key={groupName} className="group/row">
                 <div className="flex sticky left-0 z-10">
-                  <div className="w-40 bg-muted/30 p-3 font-medium border-r flex items-center">
+                  <div className={cn(
+                    "bg-muted/30 p-3 font-medium border-r flex items-center",
+                    isChatOpen ? "w-32" : "w-40"
+                  )}>
                     {groupBy === 'type' && (
                       <div className={cn(
                         'h-6 w-6 mr-2 rounded-md flex items-center justify-center',
