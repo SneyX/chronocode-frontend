@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -14,7 +13,6 @@ import { ArrowLeft, Loader2 } from 'lucide-react';
 import { Commit, TimelineFilters, TimeScale, GroupBy } from '@/types';
 import { filterCommits } from '@/utils/filter-utils';
 
-// Mock data for demonstration
 const mockCommits: Commit[] = [
   {
     sha: '1',
@@ -251,11 +249,9 @@ const TimelinePage: React.FC = () => {
   const navigate = useNavigate();
   
   useEffect(() => {
-    // Simulate API call to fetch commits
     const fetchCommits = async () => {
       setIsLoading(true);
       try {
-        // In a real app, this would be an API call
         await new Promise(resolve => setTimeout(resolve, 1500));
         setCommits(mockCommits);
         setFilteredCommits(mockCommits);
@@ -279,10 +275,8 @@ const TimelinePage: React.FC = () => {
   const handleRepositorySubmit = async (url: string) => {
     setIsLoading(true);
     try {
-      // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 2000));
       
-      // Replace commits with new data
       setCommits(mockCommits);
       setFilteredCommits(mockCommits);
       
@@ -303,7 +297,6 @@ const TimelinePage: React.FC = () => {
     setSelectedCommit(commitSha);
     setExpandedCommit(commitSha);
     
-    // Scroll to the commit card if it exists
     setTimeout(() => {
       const commitCard = document.getElementById(`commit-${commitSha}`);
       if (commitCard) {

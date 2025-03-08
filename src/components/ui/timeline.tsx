@@ -6,7 +6,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { Commit, TimeScale, GroupBy, CommitType } from '@/types';
 import { calculateTimeRange, generateTimeIntervals, formatTimeInterval, calculateCommitPosition } from '@/utils/date-utils';
 import { groupCommits, getCommitTypeColor } from '@/utils/filter-utils';
-import { GitCommit, Sparkles, AlertTriangle, Trophy, Bug, Tool } from 'lucide-react';
+import { GitCommit, Sparkles, AlertTriangle, Trophy, Bug, Wrench } from 'lucide-react';
 import { formatDate } from '@/utils/date-utils';
 import { cn } from '@/lib/utils';
 
@@ -49,7 +49,7 @@ const Timeline: React.FC<TimelineProps> = ({
       case 'WARNING': return <AlertTriangle className="h-full w-full p-1" />;
       case 'MILESTONE': return <Trophy className="h-full w-full p-1" />;
       case 'BUG': return <Bug className="h-full w-full p-1" />;
-      case 'CHORE': return <Tool className="h-full w-full p-1" />;
+      case 'CHORE': return <Wrench className="h-full w-full p-1" />;
       default: return <GitCommit className="h-full w-full p-1" />;
     }
   };

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -6,7 +5,7 @@ import Header from '@/components/layout/header';
 import Footer from '@/components/layout/footer';
 import RepositoryInput from '@/components/ui/repository-input';
 import { Button } from '@/components/ui/button';
-import { Sparkles, AlertTriangle, Trophy, Bug, Tool, ArrowRight } from 'lucide-react';
+import { Sparkles, AlertTriangle, Trophy, Bug, Wrench, ArrowRight } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
 const Index: React.FC = () => {
@@ -115,7 +114,7 @@ const Index: React.FC = () => {
                 {
                   title: 'Chores',
                   description: 'Maintenance and housekeeping tasks',
-                  icon: Tool,
+                  icon: Wrench,
                   color: 'bg-commit-chore text-white'
                 }
               ].map((item, index) => (

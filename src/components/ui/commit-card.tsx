@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -8,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Commit, CommitType } from '@/types';
 import { formatDate } from '@/utils/date-utils';
 import { getCommitTypeColor } from '@/utils/filter-utils';
-import { ExternalLink, GitCommit, Book, Lightbulb, Sparkles, Bug, AlertTriangle, Trophy, Tool } from 'lucide-react';
+import { ExternalLink, GitCommit, Book, Lightbulb, Sparkles, Bug, AlertTriangle, Trophy, Wrench } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface CommitCardProps {
@@ -16,6 +15,7 @@ interface CommitCardProps {
   className?: string;
   isExpanded?: boolean;
   onToggleExpand?: () => void;
+  id?: string;
 }
 
 const CommitCard: React.FC<CommitCardProps> = ({
@@ -23,6 +23,7 @@ const CommitCard: React.FC<CommitCardProps> = ({
   className,
   isExpanded = false,
   onToggleExpand,
+  id,
 }) => {
   const analysis = commit.commit_analises[0] || null;
   
@@ -31,16 +32,19 @@ const CommitCard: React.FC<CommitCardProps> = ({
     'WARNING': AlertTriangle,
     'MILESTONE': Trophy,
     'BUG': Bug,
-    'CHORE': Tool,
+    'CHORE': Wrench,
   }[analysis?.type || 'CHORE'];
 
   return (
-    <Card className={cn(
-      'w-full overflow-hidden transition-all duration-300 border',
-      'hover:shadow-lg glass-morphism',
-      isExpanded ? 'scale-100' : 'scale-98 hover:scale-100',
-      className
-    )}>
+    <Card 
+      id={id}
+      className={cn(
+        'w-full overflow-hidden transition-all duration-300 border',
+        'hover:shadow-lg glass-morphism',
+        isExpanded ? 'scale-100' : 'scale-98 hover:scale-100',
+        className
+      )}
+    >
       <CardHeader className="p-4 pb-2">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
