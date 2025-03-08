@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import CommitModal from '@/components/ui/commit-modal';
 import { toast } from 'sonner';
+import { Commit, CommitType } from '@/types';
 
 type Message = {
   id: number;
@@ -15,7 +16,7 @@ type Message = {
 };
 
 // Mock commits for demonstration (would come from props in a real app)
-const mockCommits = [
+const mockCommits: Commit[] = [
   {
     sha: '1',
     created_at: '2023-01-01T00:00:00Z',
@@ -36,7 +37,7 @@ const mockCommits = [
         idea: 'Setting up the foundation for the project',
         description: 'Created basic structure with core dependencies',
         commit_sha: '1',
-        type: 'CHORE',
+        type: 'CHORE' as CommitType,
         epic: 'Project Setup'
       }
     ]
@@ -61,7 +62,7 @@ const mockCommits = [
         idea: 'Securing user access with a robust auth system',
         description: 'Implemented JWT-based authentication flow',
         commit_sha: '2',
-        type: 'FEATURE',
+        type: 'FEATURE' as CommitType,
         epic: 'User Authentication'
       }
     ]
@@ -86,7 +87,7 @@ const mockCommits = [
         idea: 'Strengthening authentication security measures',
         description: 'Upgraded password hashing and added brute force protection',
         commit_sha: '3',
-        type: 'FEATURE',
+        type: 'FEATURE' as CommitType,
         epic: 'User Authentication'
       }
     ]
@@ -111,7 +112,7 @@ const mockCommits = [
         idea: 'Resolving edge cases in authentication flow',
         description: 'Fixed token refresh mechanism and session handling',
         commit_sha: '6',
-        type: 'BUG',
+        type: 'BUG' as CommitType,
         epic: 'User Authentication'
       }
     ]
@@ -136,7 +137,7 @@ const mockCommits = [
         idea: 'Preventing XSS attacks with robust protection',
         description: 'Implemented input validation and content security policy',
         commit_sha: '7',
-        type: 'FEATURE',
+        type: 'FEATURE' as CommitType,
         epic: 'Security'
       }
     ]
@@ -161,7 +162,7 @@ const mockCommits = [
         idea: 'Boosting application speed with efficient queries',
         description: 'Added database indexes and implemented query caching',
         commit_sha: '8',
-        type: 'FEATURE',
+        type: 'FEATURE' as CommitType,
         epic: 'Performance'
       }
     ]
@@ -186,7 +187,7 @@ const mockCommits = [
         idea: 'Launching the first stable version of the application',
         description: 'Finalized documentation and version bumps for 1.0.0 release',
         commit_sha: '9',
-        type: 'MILESTONE',
+        type: 'MILESTONE' as CommitType,
         epic: 'Release'
       }
     ]
