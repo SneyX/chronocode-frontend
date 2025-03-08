@@ -8,6 +8,7 @@ import Timeline from '@/components/ui/timeline';
 import FilterBar from '@/components/ui/filter-bar';
 import CommitCard from '@/components/ui/commit-card';
 import RepositoryInput from '@/components/ui/repository-input';
+import FloatingChatButton from '@/components/ui/floating-chat-button';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Loader2, RefreshCw } from 'lucide-react';
@@ -404,6 +405,9 @@ const TimelinePage: React.FC = () => {
     ? commits.find(commit => commit.sha === selectedCommit)
     : undefined;
 
+  // Show chat button only when we have commit data
+  const showChatButton = commits.length > 0;
+
   return (
     <div className="flex flex-col min-h-screen">
       <Header />
@@ -526,6 +530,10 @@ const TimelinePage: React.FC = () => {
           </>
         )}
       </main>
+      
+      {showChatButton && (
+        <FloatingChatButton repoName={repoParam || undefined} />
+      )}
       
       <Footer />
     </div>
