@@ -9,11 +9,15 @@ import { ChatProvider } from '@/contexts/chat-context'
 function App() {
   return (
     <ChatProvider>
-      <Routes>
-        <Route path="/" element={<IndexPage />} />
-        <Route path="/timeline" element={<TimelinePage />} />
-        <Route path="*" element={<NotFoundPage />} />
-      </Routes>
+      <div className="sidebar-chat-layout">
+        <div className="timeline-container">
+          <Routes>
+            <Route path="/" element={<IndexPage />} />
+            <Route path="/timeline" element={<TimelinePage />} />
+            <Route path="*" element={<NotFoundPage />} />
+          </Routes>
+        </div>
+      </div>
     </ChatProvider>
   )
 }
