@@ -17,7 +17,7 @@ const defaultMetadata = {
   titleTemplate: '%s | Chronocode',
   defaultTitle: 'Chronocode - Visualize Your Repository Timeline',
   defaultDescription: 'Visualize and analyze your code repository commits with intelligent timeline and insights.',
-  defaultOgImage: '/og-image.png',
+  defaultOgImage: '/lovable-uploads/c9272aad-7458-4ac7-9168-26adc0c800ef.png',
   defaultTwitterCard: 'summary_large_image' as const,
   defaultOgType: 'website' as const,
   siteUrl: 'https://chronocode.ai',
@@ -53,7 +53,9 @@ const Metadata: React.FC<MetadataProps> = ({
       <meta property="og:title" content={pageTitle} />
       <meta property="og:description" content={pageDescription} />
       <meta property="og:url" content={pageUrl} />
-      <meta property="og:image" content={`${defaultMetadata.siteUrl}${pageOgImage}`} />
+      <meta property="og:image" content={pageOgImage.startsWith('/') && !pageOgImage.startsWith('http') 
+        ? `${window.location.origin}${pageOgImage}` 
+        : pageOgImage} />
       <meta property="og:type" content={ogType} />
       <meta property="og:site_name" content={defaultMetadata.siteName} />
       
@@ -61,7 +63,9 @@ const Metadata: React.FC<MetadataProps> = ({
       <meta name="twitter:card" content={twitterCard} />
       <meta name="twitter:title" content={pageTitle} />
       <meta name="twitter:description" content={pageDescription} />
-      <meta name="twitter:image" content={`${defaultMetadata.siteUrl}${pageOgImage}`} />
+      <meta name="twitter:image" content={pageOgImage.startsWith('/') && !pageOgImage.startsWith('http')
+        ? `${window.location.origin}${pageOgImage}`
+        : pageOgImage} />
       
       {/* Indexing Control */}
       {noIndex && <meta name="robots" content="noindex, nofollow" />}
