@@ -73,6 +73,54 @@ export const checkRepoExists = async (repoName: string): Promise<boolean> => {
   }
 };
 
+export const createEmbeddingSpace = async (repoName: string): Promise<boolean> => {
+  try {
+    // First get the repository to get its URL
+    const { data: repositories, error } = await supabase
+      .from('repositories')
+      .select('id, url')
+      .eq('name', repoName)
+      .limit(1);
+    
+    if (error) {
+      console.error('Supabase error fetching repository:', error);
+      throw error;
+    }
+    
+    if (!repositories || repositories.length === 0) {
+      console.error('Repository not found:', repoName);
+      return false;
+    }
+    
+    const repository = repositories[0];
+    const BACKEND_URL = "https://backend-late-glitter-2411.fly.dev";
+    
+    // Make POST request to create embedding space
+    const response = await fetch(`${BACKEND_URL}/api/v1/create-embedding-space`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'CHRONOCODE123'
+      },
+      body: JSON.stringify({
+        repository_url: repository.url
+      })
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ detail: 'Unknown error' }));
+      console.error('Failed to create embedding space:', errorData);
+      return false;
+    }
+    
+    return true;
+  } catch (error) {
+    console.error('Error creating embedding space:', error);
+    return false;
+  }
+};
+
+
 export const getRepositoryByName = async (repoName: string): Promise<Repository | null> => {
   try {
     const { data, error } = await supabase

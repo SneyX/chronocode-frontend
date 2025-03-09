@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Search, GitBranch, Loader2, ChevronDown, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { extractRepoNameFromUrl, checkRepoExists, getRepositoryByName } from '@/lib/supabase';
+import { extractRepoNameFromUrl, checkRepoExists, getRepositoryByName, createEmbeddingSpace } from '@/lib/supabase';
 import { useAuth } from '@/contexts/auth-context';
 import { getUserRepositories, Repository, analyzeRepository } from '@/services/github-service';
 import { 
@@ -150,6 +150,30 @@ const RepositoryInput: React.FC<RepositoryInputProps> = ({
       console.log('Repository exists:', exists);
       
       if (exists) {
+        setShowAnalysisDialog(true);
+        setIsAnalyzing(true);
+        toast.info('Creating embedding space for search functionality', {
+          description: 'This process may take a few moments'
+        });
+        
+        try {
+          await createEmbeddingSpace(repoName);
+          setAnalysisProgress(100);
+          setTimeout(() => {
+            setShowAnalysisDialog(false);
+            setIsAnalyzing(false);
+            toast.success('Embedding space created successfully', {
+              description: 'Search functionality is now available for this repository'
+            });
+          }, 1000);
+        } catch (error) {
+          console.error('Error creating embedding space:', error);
+          setShowAnalysisDialog(false);
+          setIsAnalyzing(false);
+          toast.error('Failed to create embedding space', {
+            description: 'Repository will be available but search functionality may be limited'
+          });
+        }
         await onSubmit(url, repoName, exists);
       } else {
         setShowAnalysisDialog(true);
@@ -158,6 +182,7 @@ const RepositoryInput: React.FC<RepositoryInputProps> = ({
         try {
           await analyzeRepository(url, token || undefined);
           setAnalysisProgress(100);
+          await createEmbeddingSpace(repoName);
           toast.success('Repository analysis completed!');
           setTimeout(() => {
             setShowAnalysisDialog(false);
@@ -179,6 +204,7 @@ const RepositoryInput: React.FC<RepositoryInputProps> = ({
           });
         }
       }
+
     } catch (error) {
       console.error('Error submitting repository URL:', error);
       toast.error('Failed to process repository. Please try again.');

@@ -12,7 +12,7 @@ import {
   GitGraph, Search, MessageSquareText, FileCode, Brain, MessageCircleQuestion
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { checkRepoExists } from '@/lib/supabase';
+import { checkRepoExists, createEmbeddingSpace } from '@/lib/supabase';
 import FeaturesSection from '@/components/sections/features-section';
 import ChatSection from '@/components/sections/chat-section';
 
@@ -29,12 +29,7 @@ const Index: React.FC = () => {
       console.log('Repository exists:', repoExists);
       
       if (repoExists) {
-        toast.success('Repository found in our database!', {
-          description: 'Redirecting to the timeline view.',
-        });
-        
-        // Navigate to timeline page with repo name as parameter
-        navigate(`/timeline?repo=${encodeURIComponent(repoName)}`);
+        toast.success('Repository found in our database!');
       } else {
         // Simulate API call for repository analysis
         await new Promise(resolve => setTimeout(resolve, 2000));
@@ -42,10 +37,15 @@ const Index: React.FC = () => {
         toast.success('Repository analyzed successfully!', {
           description: 'You can now view the timeline with example data.',
         });
-        
+
         // Navigate to timeline page with example data flag
         navigate(`/timeline?repo=${encodeURIComponent(repoName)}&example=true`);
       }
+
+
+
+      // Navigate to timeline page with repo name as parameter
+      navigate(`/timeline?repo=${encodeURIComponent(repoName)}`);
     } catch (error) {
       console.error('Error analyzing repository:', error);
       toast.error('Failed to analyze repository', {
