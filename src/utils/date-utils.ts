@@ -16,49 +16,6 @@ export const formatDate = (dateString: string, formatString: string = 'MMM d, yy
 };
 
 /**
- * Determines if there's a significant gap between dates based on time scale
- */
-export const isSignificantGap = (date1: Date, date2: Date, scale: TimeScale): boolean => {
-  switch (scale) {
-    case 'day':
-      return differenceInDays(date2, date1) > 14; // More than 2 weeks
-    case 'week':
-      return differenceInWeeks(date2, date1) > 6; // More than 6 weeks
-    case 'month':
-      return differenceInMonths(date2, date1) > 3; // More than 3 months
-    case 'quarter':
-      return differenceInMonths(date2, date1) > 6; // More than 6 months
-    case 'year':
-      return differenceInYears(date2, date1) > 1; // More than 1 year
-    default:
-      return false;
-  }
-};
-
-/**
- * Format a date range for display
- */
-export const formatDateRange = (start: Date, end: Date, scale: TimeScale): string => {
-  switch (scale) {
-    case 'day':
-      return `${format(start, 'MMM d')} - ${format(end, 'MMM d, yyyy')}`;
-    case 'week':
-      return `${format(start, 'MMM d')} - ${format(end, 'MMM d, yyyy')}`;
-    case 'month':
-      return `${format(start, 'MMM yyyy')} - ${format(end, 'MMM yyyy')}`;
-    case 'quarter': {
-      const startQuarter = Math.floor(start.getMonth() / 3) + 1;
-      const endQuarter = Math.floor(end.getMonth() / 3) + 1;
-      return `Q${startQuarter} ${format(start, 'yyyy')} - Q${endQuarter} ${format(end, 'yyyy')}`;
-    }
-    case 'year':
-      return `${format(start, 'yyyy')} - ${format(end, 'yyyy')}`;
-    default:
-      return `${format(start, 'MMM d, yyyy')} - ${format(end, 'MMM d, yyyy')}`;
-  }
-};
-
-/**
  * Calculates the time range for the timeline
  */
 export const calculateTimeRange = (commits: { date: string }[], scale: TimeScale) => {
@@ -104,162 +61,55 @@ export const calculateTimeRange = (commits: { date: string }[], scale: TimeScale
 };
 
 /**
- * Generates time intervals for the timeline, consolidating gaps
- * and being smart about creating intervals only where needed
+ * Generates time intervals for the timeline
  */
-export const generateTimeIntervals = (start: Date, end: Date, scale: TimeScale, commits: { date: string }[] = []) => {
+export const generateTimeIntervals = (start: Date, end: Date, scale: TimeScale) => {
   const intervals = [];
-  
-  // Sort commits by date
-  const sortedDates = [...commits]
-    .map(commit => new Date(commit.date))
-    .sort((a, b) => a.getTime() - b.getTime());
-  
-  // Add the start and end dates if they're not already in the list
-  if (sortedDates.length === 0 || start.getTime() !== sortedDates[0].getTime()) {
-    sortedDates.unshift(start);
-  }
-  
-  if (end.getTime() !== sortedDates[sortedDates.length - 1].getTime()) {
-    sortedDates.push(end);
-  }
-  
-  // Function to get unique periods (years, months, etc.) in the date range
-  const getUniquePeriods = () => {
-    const periods = new Set<string>();
-    let current = new Date(start);
-    
-    while (current <= end) {
-      let periodKey = '';
-      
-      switch (scale) {
-        case 'day':
-          periodKey = format(current, 'yyyy-MM-dd');
-          current = addDays(current, 1);
-          break;
-        case 'week':
-          periodKey = `Week of ${format(current, 'yyyy-MM-dd')}`;
-          current = addWeeks(current, 1);
-          break;
-        case 'month':
-          periodKey = format(current, 'yyyy-MM');
-          current = addMonths(current, 1);
-          break;
-        case 'quarter':
-          const quarter = Math.floor(current.getMonth() / 3) + 1;
-          periodKey = `Q${quarter} ${format(current, 'yyyy')}`;
-          current = addMonths(current, 3);
-          break;
-        case 'year':
-          periodKey = format(current, 'yyyy');
-          current = addYears(current, 1);
-          break;
-      }
-      
-      periods.add(periodKey);
-    }
-    
-    return Array.from(periods);
-  };
-  
-  // For sparse timelines, get unique periods first
-  const uniquePeriods = getUniquePeriods();
-  
-  // Check if there are too many periods with no commits
-  // If more than 70% of periods have no commits, we should use gap consolidation
-  const shouldConsolidateGaps = commits.length > 0 && 
-    uniquePeriods.length > 5 && 
-    (commits.length / uniquePeriods.length) < 0.3;
+  let current = new Date(start);
 
-  // Generate intervals, consolidating large gaps
-  for (let i = 0; i < sortedDates.length - 1; i++) {
-    const currentDate = sortedDates[i];
-    const nextDate = sortedDates[i + 1];
+  while (current <= end) {
+    intervals.push(new Date(current));
     
-    intervals.push(new Date(currentDate));
-    
-    // Check if there's a significant gap or if we're in consolidation mode
-    if (shouldConsolidateGaps && isSignificantGap(currentDate, nextDate, scale)) {
-      // Add a consolidated "gap" interval
-      intervals.push({
-        isGap: true,
-        start: currentDate,
-        end: nextDate,
-        label: formatDateRange(currentDate, nextDate, scale)
-      });
-      
-      // Skip to the next date
-      continue;
-    } else {
-      // Add regular intervals between the dates based on the scale
-      let current = new Date(currentDate);
-      
-      while (current < nextDate) {
-        let next;
-        
-        switch (scale) {
-          case 'day':
-            next = addDays(current, 1);
-            break;
-          case 'week':
-            next = addWeeks(current, 1);
-            break;
-          case 'month':
-            next = addMonths(current, 1);
-            break;
-          case 'quarter':
-            next = addMonths(current, 3);
-            break;
-          case 'year':
-            next = addYears(current, 1);
-            break;
-          default:
-            next = addDays(current, 1);
-        }
-        
-        // Check if we've reached or passed the next commit date
-        if (next >= nextDate) {
-          break;
-        }
-        
-        intervals.push(new Date(next));
-        current = next;
-      }
+    switch (scale) {
+      case 'day':
+        current = addDays(current, 1);
+        break;
+      case 'week':
+        current = addWeeks(current, 1);
+        break;
+      case 'month':
+        current = addMonths(current, 1);
+        break;
+      case 'quarter':
+        current = addMonths(current, 3);
+        break;
+      case 'year':
+        current = addYears(current, 1);
+        break;
     }
   }
-  
-  // Ensure the last date is in the intervals
-  if (intervals[intervals.length - 1] !== end) {
-    intervals.push(new Date(end));
-  }
-  
+
   return intervals;
 };
 
 /**
  * Formats a time interval for display in the timeline
  */
-export const formatTimeInterval = (interval: Date | any, scale: TimeScale): string => {
-  // If this is a gap interval, return its label
-  if (interval.isGap) {
-    return interval.label;
-  }
-  
-  // Otherwise format regular date
+export const formatTimeInterval = (date: Date, scale: TimeScale): string => {
   switch (scale) {
     case 'day':
-      return format(interval, 'MMM d');
+      return format(date, 'MMM d');
     case 'week':
-      return `Week of ${format(interval, 'MMM d')}`;
+      return `Week of ${format(date, 'MMM d')}`;
     case 'month':
-      return format(interval, 'MMM yyyy');
+      return format(date, 'MMM yyyy');
     case 'quarter':
-      const quarter = Math.floor(interval.getMonth() / 3) + 1;
-      return `Q${quarter} ${format(interval, 'yyyy')}`;
+      const quarter = Math.floor(date.getMonth() / 3) + 1;
+      return `Q${quarter} ${format(date, 'yyyy')}`;
     case 'year':
-      return format(interval, 'yyyy');
+      return format(date, 'yyyy');
     default:
-      return format(interval, 'MMM d, yyyy');
+      return format(date, 'MMM d, yyyy');
   }
 };
 
@@ -350,13 +200,10 @@ export const isSameScalePeriod = (date1: Date, date2: Date, scale: TimeScale): b
 /**
  * Get the interval index for a commit (which column it should appear in)
  */
-export const getCommitIntervalIndex = (commitDate: Date, intervals: (Date | any)[], scale: TimeScale): number => {
+export const getCommitIntervalIndex = (commitDate: Date, intervals: Date[], scale: TimeScale): number => {
   // For 'day' scale, look for the exact matching day
   if (scale === 'day') {
     for (let i = 0; i < intervals.length; i++) {
-      // Skip gap intervals for exact matching
-      if (intervals[i].isGap) continue;
-      
       if (isSameDay(getScaleStart(commitDate, 'day'), getScaleStart(intervals[i], 'day'))) {
         return i;
       }
@@ -366,20 +213,8 @@ export const getCommitIntervalIndex = (commitDate: Date, intervals: (Date | any)
   
   // For other scales, find the correct interval by comparing the scale-specific periods
   for (let i = 0; i < intervals.length; i++) {
-    // Skip gap intervals for exact matching
-    if (intervals[i].isGap) continue;
-    
     if (isSameScalePeriod(commitDate, intervals[i], scale)) {
       return i;
-    }
-  }
-  
-  // Handle gap intervals - check if commit is within a gap
-  for (let i = 0; i < intervals.length; i++) {
-    if (intervals[i].isGap) {
-      if (isAfter(commitDate, intervals[i].start) && isBefore(commitDate, intervals[i].end)) {
-        return i;
-      }
     }
   }
   
@@ -387,9 +222,6 @@ export const getCommitIntervalIndex = (commitDate: Date, intervals: (Date | any)
   // This ensures commits are placed in the correct column
   const commitTimeStart = getScaleStart(commitDate, scale);
   for (let i = 1; i < intervals.length; i++) {
-    // Skip gap intervals
-    if (intervals[i].isGap || intervals[i-1].isGap) continue;
-    
     const currentIntervalStart = getScaleStart(intervals[i], scale);
     const previousIntervalStart = getScaleStart(intervals[i-1], scale);
     
@@ -402,12 +234,9 @@ export const getCommitIntervalIndex = (commitDate: Date, intervals: (Date | any)
   // If still no match (e.g., after the last interval), use the closest interval based on date
   const commitTime = commitDate.getTime();
   let closestIndex = 0;
-  let closestDiff = Infinity;
+  let closestDiff = Math.abs(commitTime - intervals[0].getTime());
   
-  for (let i = 0; i < intervals.length; i++) {
-    // Skip gap intervals for distance calculation
-    if (intervals[i].isGap) continue;
-    
+  for (let i = 1; i < intervals.length; i++) {
     const diff = Math.abs(commitTime - intervals[i].getTime());
     if (diff < closestDiff) {
       closestDiff = diff;
@@ -426,7 +255,7 @@ export const calculateCommitPosition = (
   timeStart: Date,
   timeEnd: Date,
   scale: TimeScale,
-  intervals: (Date | any)[]
+  intervals: Date[]
 ): number => {
   // Find which interval the commit falls into
   const intervalIndex = getCommitIntervalIndex(new Date(commitDate), intervals, scale);
@@ -437,11 +266,6 @@ export const calculateCommitPosition = (
   
   // Calculate the interval width as percentage
   const intervalWidth = 100 / (intervals.length - 1);
-  
-  // Handle gap intervals differently
-  if (intervals[intervalIndex].isGap) {
-    return intervalIndex * intervalWidth + (intervalWidth / 2); // Center in gap
-  }
   
   // Get the actual date and interval boundaries for precise positioning
   const date = new Date(commitDate);

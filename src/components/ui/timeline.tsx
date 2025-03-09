@@ -14,7 +14,7 @@ import {
   formatDate
 } from '@/utils/date-utils';
 import { groupCommits, getCommitTypeColor } from '@/utils/filter-utils';
-import { GitCommit, Sparkles, AlertTriangle, Trophy, Bug, Wrench, RefreshCw, FileText, Layers, Calendar } from 'lucide-react';
+import { GitCommit, Sparkles, AlertTriangle, Trophy, Bug, Wrench, RefreshCw, FileText, Layers } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
@@ -46,7 +46,7 @@ const Timeline: React.FC<TimelineProps> = ({
 }) => {
   const [timeRange, setTimeRange] = useState(() => calculateTimeRange(commits, timeScale));
   const [timeIntervals, setTimeIntervals] = useState(() => 
-    generateTimeIntervals(timeRange.start, timeRange.end, timeScale, commits)
+    generateTimeIntervals(timeRange.start, timeRange.end, timeScale)
   );
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const timelineRef = useRef<HTMLDivElement>(null);
@@ -60,7 +60,7 @@ const Timeline: React.FC<TimelineProps> = ({
   useEffect(() => {
     const range = calculateTimeRange(commits, timeScale);
     setTimeRange(range);
-    setTimeIntervals(generateTimeIntervals(range.start, range.end, timeScale, commits));
+    setTimeIntervals(generateTimeIntervals(range.start, range.end, timeScale));
   }, [commits, timeScale]);
 
   const groupedCommits = groupCommits(commits, groupBy);
@@ -163,11 +163,6 @@ const Timeline: React.FC<TimelineProps> = ({
 
   // Adjust column width for intervals with and without commits
   const getColumnWidth = (index: number) => {
-    // If this is a gap interval, give it a fixed width
-    if (timeIntervals[index] && timeIntervals[index].isGap) {
-      return 120; // Fixed width for gap columns
-    }
-    
     const baseWidth = Math.max(70, Math.min(180, 1000 / timeIntervals.length));
     return intervalsWithCommits[index] ? baseWidth : Math.max(35, baseWidth * 0.6);
   };
@@ -177,31 +172,6 @@ const Timeline: React.FC<TimelineProps> = ({
     total + getColumnWidth(index), 0);
     
   const sidebarWidth = isChatOpen ? 8 : 10; // rem units
-
-  // Deduplicate time intervals for display
-  const deduplicatedIntervals = useMemo(() => {
-    const result: Array<{index: number, interval: any, label: string}> = [];
-    let lastLabel = "";
-    
-    timeIntervals.forEach((interval, index) => {
-      const label = formatTimeInterval(interval, timeScale);
-      
-      // If this interval is a gap, always include it
-      if (interval.isGap) {
-        result.push({index, interval, label});
-        lastLabel = label;
-        return;
-      }
-      
-      // For regular intervals, only add if the label is different from the previous one
-      if (label !== lastLabel) {
-        result.push({index, interval, label});
-        lastLabel = label;
-      }
-    });
-    
-    return result;
-  }, [timeIntervals, timeScale]);
 
   return (
     <div className={cn(
@@ -230,42 +200,20 @@ const Timeline: React.FC<TimelineProps> = ({
               width: `${timelineWidth}px`
             }}
           >
-            {deduplicatedIntervals.map(({index, interval, label}) => {
+            {timeIntervals.map((interval, index) => {
               const hasCommits = intervalsWithCommits[index];
-              const isGapInterval = interval.isGap;
-              
-              // Calculate width for this header - spans multiple columns if needed
-              let columnWidth = 0;
-              let nextDifferentLabelIndex = timeIntervals.findIndex((interval, i) => 
-                i > index && formatTimeInterval(interval, timeScale) !== label && !interval.isGap
-              );
-              
-              if (nextDifferentLabelIndex === -1) {
-                nextDifferentLabelIndex = timeIntervals.length;
-              }
-              
-              // Calculate the total width of all columns with the same label
-              for (let i = index; i < nextDifferentLabelIndex; i++) {
-                columnWidth += getColumnWidth(i);
-              }
+              const columnWidth = getColumnWidth(index);
               
               return (
                 <div 
                   key={index} 
                   className={cn(
                     "flex-none px-2 py-4 text-center text-xs font-medium border-r last:border-r-0",
-                    isGapInterval ? "bg-muted/40 italic" : (!hasCommits && "bg-muted/20 text-muted-foreground")
+                    !hasCommits && "bg-muted/20 text-muted-foreground"
                   )}
                   style={{ width: `${columnWidth}px` }}
                 >
-                  {isGapInterval ? (
-                    <div className="flex items-center justify-center gap-1">
-                      <Calendar className="h-3 w-3" />
-                      <span>{label}</span>
-                    </div>
-                  ) : (
-                    label
-                  )}
+                  {formatTimeInterval(interval, timeScale)}
                 </div>
               );
             })}
@@ -282,9 +230,8 @@ const Timeline: React.FC<TimelineProps> = ({
             width: `${timelineWidth}px`
           }}
         >
-          {timeIntervals.map((interval, index) => {
+          {timeIntervals.map((_, index) => {
             const hasCommits = intervalsWithCommits[index];
-            const isGapInterval = interval.isGap;
             const columnWidth = getColumnWidth(index);
             
             return (
@@ -292,7 +239,7 @@ const Timeline: React.FC<TimelineProps> = ({
                 key={index} 
                 className={cn(
                   "flex-none border-r last:border-r-0 h-full",
-                  isGapInterval ? "bg-muted/40" : (!hasCommits && "bg-muted/20")
+                  !hasCommits && "bg-muted/20"
                 )}
                 style={{ width: `${columnWidth}px` }}
               />
@@ -333,7 +280,6 @@ const Timeline: React.FC<TimelineProps> = ({
                   <div className="absolute inset-0 flex pointer-events-none">
                     {timeIntervals.map((interval, index) => {
                       const hasCommits = intervalsWithCommits[index];
-                      const isGapInterval = interval.isGap;
                       const columnWidth = getColumnWidth(index);
                       
                       return (
@@ -341,10 +287,8 @@ const Timeline: React.FC<TimelineProps> = ({
                           key={index}
                           className={cn(
                             "flex-none border-r last:border-r-0",
-                            isGapInterval ? "bg-muted/40" : (
-                              index % 2 === 0 ? "bg-muted/5" : "",
-                              !hasCommits && "bg-muted/10"
-                            )
+                            index % 2 === 0 ? "bg-muted/5" : "",
+                            !hasCommits && "bg-muted/10"
                           )}
                           style={{ width: `${columnWidth}px` }}
                         ></div>
@@ -358,14 +302,7 @@ const Timeline: React.FC<TimelineProps> = ({
                     for (let i = 0; i < cluster.intervalIndex; i++) {
                       leftPosition += getColumnWidth(i);
                     }
-                    
-                    // If this is a gap interval, center the commit in the column
-                    if (timeIntervals[cluster.intervalIndex] && timeIntervals[cluster.intervalIndex].isGap) {
-                      leftPosition += getColumnWidth(cluster.intervalIndex) / 2;
-                    } else {
-                      // For regular intervals
-                      leftPosition += getColumnWidth(cluster.intervalIndex) / 2;
-                    }
+                    leftPosition += getColumnWidth(cluster.intervalIndex) / 2;
                     
                     if (cluster.commits.length === 1) {
                       const commit = cluster.commits[0];
