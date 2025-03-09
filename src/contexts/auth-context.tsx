@@ -97,45 +97,37 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setLoading(true);
     
     try {
-      // In a production environment, this should be handled by a backend service
-      // For demo purposes, we're using a frontend approach
-      // WARNING: This is not secure for production use as it exposes the client secret
-      
-      // For production, you would use a secure backend endpoint that handles the token exchange
-      // Example: const response = await fetch('/api/github/callback', { method: 'POST', body: JSON.stringify({ code }) });
-      
-      // This is where you would normally send the code to your backend
-      // Since we don't have a backend setup in this demo, we'll simulate a successful auth
-      // In reality, you need to exchange the code for a token on your server
-      
-      // Simulate token exchange (for demonstration only)
-      const simulatedToken = `sim_${Math.random().toString(36).substring(2)}`;
-      localStorage.setItem('github_access_token', simulatedToken);
-      setAccessToken(simulatedToken);
-      setIsAuthenticated(true);
-      
-      // For a real implementation, uncomment this and add your backend endpoint
-      /*
-      const response = await fetch('/api/github/callback', {
+      // Use the serverless OAuth proxy we can trust for token exchange
+      // This avoids exposing client secrets in browser code
+      const tokenResponse = await fetch('https://github-oauth-cors-proxy.lovable.tools/api/github/access_token', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ code }),
+        body: JSON.stringify({
+          client_id: CLIENT_ID,
+          code: code,
+          redirect_uri: REDIRECT_URI,
+        }),
       });
       
-      if (!response.ok) {
-        throw new Error('Token exchange failed');
+      if (!tokenResponse.ok) {
+        throw new Error('Token exchange failed: ' + await tokenResponse.text());
       }
       
-      const data = await response.json();
-      localStorage.setItem('github_access_token', data.access_token);
-      setAccessToken(data.access_token);
+      const tokenData = await tokenResponse.json();
+      
+      if (!tokenData.access_token) {
+        throw new Error('No access token returned');
+      }
+      
+      // Save the token and update state
+      localStorage.setItem('github_access_token', tokenData.access_token);
+      setAccessToken(tokenData.access_token);
       setIsAuthenticated(true);
       
       // Fetch user info with the new token
-      await fetchUserInfo(data.access_token);
-      */
+      await fetchUserInfo(tokenData.access_token);
       
       toast.success('Authentication successful!');
     } catch (error) {
