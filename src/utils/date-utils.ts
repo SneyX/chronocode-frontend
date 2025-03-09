@@ -1,3 +1,4 @@
+
 import { format, parse, addDays, addWeeks, addMonths, addYears, differenceInDays, differenceInWeeks, differenceInMonths, differenceInYears, isBefore, isAfter, isSameDay, isSameWeek, isSameMonth, isSameQuarter, isSameYear, startOfDay, startOfWeek, startOfMonth, startOfQuarter, startOfYear, endOfDay, endOfWeek, endOfMonth, endOfQuarter, endOfYear, differenceInMilliseconds } from 'date-fns';
 import { TimeScale, Commit } from '@/types';
 
@@ -243,10 +244,15 @@ export const isSameScalePeriod = (date1: Date, date2: Date, scale: TimeScale): b
  * Get the interval index for a commit (which column it should appear in)
  */
 export const getCommitIntervalIndex = (commitDate: Date, intervals: Date[], scale: TimeScale): number => {
+  // Safety check: if intervals array is empty, return -1
+  if (!intervals || intervals.length === 0) {
+    return -1;
+  }
+  
   // For 'day' scale, look for the exact matching day
   if (scale === 'day') {
     for (let i = 0; i < intervals.length; i++) {
-      if (isSameDay(getScaleStart(commitDate, 'day'), getScaleStart(intervals[i], 'day'))) {
+      if (intervals[i] && isSameDay(getScaleStart(commitDate, 'day'), getScaleStart(intervals[i], 'day'))) {
         return i;
       }
     }
@@ -254,7 +260,7 @@ export const getCommitIntervalIndex = (commitDate: Date, intervals: Date[], scal
   
   // For other scales, find the correct interval by comparing the scale-specific periods
   for (let i = 0; i < intervals.length; i++) {
-    if (isSameScalePeriod(commitDate, intervals[i], scale)) {
+    if (intervals[i] && isSameScalePeriod(commitDate, intervals[i], scale)) {
       return i;
     }
   }
@@ -265,7 +271,7 @@ export const getCommitIntervalIndex = (commitDate: Date, intervals: Date[], scal
     const currentInterval = intervals[i];
     const nextInterval = intervals[i + 1];
     
-    if (
+    if (currentInterval && nextInterval &&
       (isAfter(commitDate, currentInterval) || isSameScalePeriod(commitDate, currentInterval, scale)) && 
       isBefore(commitDate, nextInterval)
     ) {
@@ -274,34 +280,44 @@ export const getCommitIntervalIndex = (commitDate: Date, intervals: Date[], scal
   }
   
   // If the date is after the last interval, place it in the last interval
-  if (isAfter(commitDate, intervals[intervals.length - 1])) {
+  if (intervals.length > 0 && isAfter(commitDate, intervals[intervals.length - 1])) {
     return intervals.length - 1;
   }
   
   // Default to the closest interval
-  const commitTime = commitDate.getTime();
-  let closestIndex = 0;
-  let closestDiff = Math.abs(commitTime - intervals[0].getTime());
-  
-  for (let i = 1; i < intervals.length; i++) {
-    const diff = Math.abs(commitTime - intervals[i].getTime());
-    if (diff < closestDiff) {
-      closestDiff = diff;
-      closestIndex = i;
+  if (intervals.length > 0) {
+    const commitTime = commitDate.getTime();
+    let closestIndex = 0;
+    let closestDiff = Math.abs(commitTime - intervals[0].getTime());
+    
+    for (let i = 1; i < intervals.length; i++) {
+      if (intervals[i]) {
+        const diff = Math.abs(commitTime - intervals[i].getTime());
+        if (diff < closestDiff) {
+          closestDiff = diff;
+          closestIndex = i;
+        }
+      }
     }
+    
+    return closestIndex;
   }
   
-  return closestIndex;
+  return -1; // Fallback if no intervals match
 };
 
 /**
  * Determines if an interval represents a gap in the timeline
  */
 export const isGapInterval = (interval: Date, allIntervals: Date[], scale: TimeScale): boolean => {
-  const index = allIntervals.findIndex(i => i.getTime() === interval.getTime());
+  if (!allIntervals || allIntervals.length <= 2) return false;
+  
+  const index = allIntervals.findIndex(i => i && interval && i.getTime() === interval.getTime());
   if (index <= 0 || index >= allIntervals.length - 1) return false;
   
   const prevInterval = allIntervals[index - 1];
+  if (!prevInterval || !interval) return false;
+  
   const expectedPrevInterval = getPreviousInterval(interval, scale);
   
   // If the previous interval in our list is not the expected previous interval
@@ -339,6 +355,11 @@ export const calculateCommitPosition = (
   scale: TimeScale,
   intervals: Date[]
 ): number => {
+  // Safety check for empty intervals
+  if (!intervals || intervals.length === 0) {
+    return 0;
+  }
+  
   // Find which interval the commit falls into
   const intervalIndex = getCommitIntervalIndex(new Date(commitDate), intervals, scale);
   
@@ -351,8 +372,8 @@ export const calculateCommitPosition = (
   
   // Get the actual date and interval boundaries for precise positioning
   const date = new Date(commitDate);
-  const intervalStart = getScaleStart(intervals[intervalIndex], scale);
-  const intervalEnd = getScaleEnd(intervals[intervalIndex], scale);
+  const intervalStart = intervals[intervalIndex] ? getScaleStart(intervals[intervalIndex], scale) : timeStart;
+  const intervalEnd = intervals[intervalIndex] ? getScaleEnd(intervals[intervalIndex], scale) : timeEnd;
   
   // Calculate the position as a percentage within the interval
   const totalIntervalDuration = differenceInMilliseconds(intervalEnd, intervalStart);

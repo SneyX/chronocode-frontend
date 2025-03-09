@@ -63,6 +63,10 @@ const Timeline: React.FC<TimelineProps> = ({
   const groupedCommits = groupCommits(commits, groupBy);
   
   const intervalsWithCommits = useMemo(() => {
+    if (!timeIntervals || timeIntervals.length === 0) {
+      return [];
+    }
+    
     const intervalHasCommits = new Array(timeIntervals.length).fill(false);
     
     commits.forEach(commit => {
@@ -101,6 +105,10 @@ const Timeline: React.FC<TimelineProps> = ({
   }, []);
 
   const clusterCommits = (commits: Commit[], groupName: string): ClusteredCommit[] => {
+    if (!timeIntervals || timeIntervals.length === 0) {
+      return [];
+    }
+    
     const positionMap: Record<string, Commit[]> = {};
     
     commits.forEach(commit => {
@@ -111,13 +119,15 @@ const Timeline: React.FC<TimelineProps> = ({
         timeScale
       );
       
-      const key = `${intervalIndex}`;
-      
-      if (!positionMap[key]) {
-        positionMap[key] = [];
+      if (intervalIndex >= 0) {
+        const key = `${intervalIndex}`;
+        
+        if (!positionMap[key]) {
+          positionMap[key] = [];
+        }
+        
+        positionMap[key].push(commit);
       }
-      
-      positionMap[key].push(commit);
     });
     
     return Object.entries(positionMap).map(([key, groupedCommits]) => {
@@ -172,6 +182,14 @@ const Timeline: React.FC<TimelineProps> = ({
   }, 0);
     
   const sidebarWidth = isChatOpen ? 8 : 10;
+
+  if (!timeIntervals || timeIntervals.length === 0) {
+    return (
+      <div className="w-full h-full flex items-center justify-center">
+        <p className="text-muted-foreground">Loading timeline...</p>
+      </div>
+    );
+  }
 
   return (
     <div className={cn(
