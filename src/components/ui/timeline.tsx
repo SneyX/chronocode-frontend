@@ -105,7 +105,8 @@ const Timeline: React.FC<TimelineProps> = ({
     
     return Object.entries(positionMap).map(([key, groupedCommits]) => {
       const intervalIndex = parseInt(key, 10);
-      const position = (intervalIndex + 0.5) * (100 / timeIntervals.length);
+      // Center the commit in its column (position at 50% of column)
+      const position = intervalIndex * (100 / (timeIntervals.length - 1 || 1));
       
       return {
         position,
@@ -233,6 +234,7 @@ const Timeline: React.FC<TimelineProps> = ({
                   
                   {/* Commit markers */}
                   {clusterCommits(groupCommits, groupName).map((cluster) => {
+                    // Calculate center of the column
                     const leftPosition = (columnWidth * cluster.intervalIndex) + (columnWidth / 2);
                     
                     if (cluster.commits.length === 1) {
@@ -248,7 +250,7 @@ const Timeline: React.FC<TimelineProps> = ({
                             <TooltipTrigger asChild>
                               <button
                                 className={cn(
-                                  'absolute top-1/2 transform -translate-y-1/2 h-8 w-8 rounded-full',
+                                  'absolute top-1/2 transform -translate-y-1/2 -translate-x-1/2 h-8 w-8 rounded-full',
                                   'flex items-center justify-center transition-all duration-300',
                                   'z-10 hover:z-30 hover:scale-125 hover:shadow-lg',
                                   getCommitTypeColor(commitType),
@@ -325,7 +327,7 @@ const Timeline: React.FC<TimelineProps> = ({
                             <TooltipTrigger asChild>
                               <button
                                 className={cn(
-                                  'absolute top-1/2 transform -translate-y-1/2 h-9 w-9 rounded-full',
+                                  'absolute top-1/2 transform -translate-y-1/2 -translate-x-1/2 h-9 w-9 rounded-full',
                                   'flex items-center justify-center transition-all duration-300',
                                   'z-10 hover:z-30 hover:scale-125 hover:shadow-lg border-2',
                                   getCommitTypeColor(dominantType),
