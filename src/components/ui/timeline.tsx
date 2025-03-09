@@ -54,7 +54,6 @@ const Timeline: React.FC<TimelineProps> = ({
   const [openClusterDialog, setOpenClusterDialog] = useState(false);
   const [selectedCluster, setSelectedCluster] = useState<ClusteredCommit | null>(null);
   const [scrollPosition, setScrollPosition] = useState(0);
-  const [isVisible, setIsVisible] = useState(false);
   
   const { highlightedCommits, currentQuestion, isChatOpen } = useChat();
   
@@ -63,14 +62,6 @@ const Timeline: React.FC<TimelineProps> = ({
     setTimeRange(range);
     setTimeIntervals(generateTimeIntervals(range.start, range.end, timeScale));
   }, [commits, timeScale]);
-
-  useEffect(() => {
-    // Trigger animations after component mount
-    const timer = setTimeout(() => {
-      setIsVisible(true);
-    }, 100);
-    return () => clearTimeout(timer);
-  }, []);
 
   const groupedCommits = groupCommits(commits, groupBy);
   
@@ -172,8 +163,8 @@ const Timeline: React.FC<TimelineProps> = ({
 
   // Adjust column width for intervals with and without commits
   const getColumnWidth = (index: number) => {
-    const baseWidth = Math.max(60, Math.min(150, 800 / timeIntervals.length));
-    return intervalsWithCommits[index] ? baseWidth : Math.max(30, baseWidth * 0.6);
+    const baseWidth = Math.max(70, Math.min(180, 1000 / timeIntervals.length));
+    return intervalsWithCommits[index] ? baseWidth : Math.max(35, baseWidth * 0.6);
   };
   
   // Calculate total timeline width based on dynamic column widths
@@ -185,11 +176,10 @@ const Timeline: React.FC<TimelineProps> = ({
   return (
     <div className={cn(
       "w-full h-full flex flex-col bg-card rounded-lg border shadow-sm overflow-hidden",
-      className,
-      isVisible ? "animate-fade-in" : "opacity-0"
+      className
     )}>
       {currentQuestion && highlightedCommits.length > 0 && (
-        <div className="bg-muted/50 px-4 py-2 border-b flex items-center justify-between animate-fade-in">
+        <div className="bg-muted/50 px-4 py-2 border-b flex items-center justify-between">
           <div className="flex items-center">
             <span className="text-sm font-medium mr-2">Filtered by:</span>
             <span className="text-sm italic truncate max-w-[200px]">"{currentQuestion}"</span>
@@ -201,7 +191,7 @@ const Timeline: React.FC<TimelineProps> = ({
       )}
       
       {/* Column Headers - Positioned above the timeline */}
-      <div className="flex-none bg-muted/30 border-b relative animate-fade-in animation-delay-100">
+      <div className="flex-none bg-muted/30 border-b relative">
         <div className="flex" style={{ marginLeft: `${sidebarWidth}rem` }}>
           <div 
             className="flex absolute" 
@@ -221,10 +211,7 @@ const Timeline: React.FC<TimelineProps> = ({
                     "flex-none px-2 py-4 text-center text-xs font-medium border-r last:border-r-0",
                     !hasCommits && "bg-muted/20 text-muted-foreground"
                   )}
-                  style={{ 
-                    width: `${columnWidth}px`,
-                    animation: `fade-in 0.3s ease-out ${0.1 + (index * 0.03)}s both`
-                  }}
+                  style={{ width: `${columnWidth}px` }}
                 >
                   {formatTimeInterval(interval, timeScale)}
                 </div>
@@ -235,7 +222,7 @@ const Timeline: React.FC<TimelineProps> = ({
       </div>
       
       {/* Empty spacing row to avoid overlap with header labels */}
-      <div className="flex-none h-4 bg-muted/10 relative animate-fade-in animation-delay-150" style={{ marginLeft: `${sidebarWidth}rem` }}>
+      <div className="flex-none h-4 bg-muted/10 relative" style={{ marginLeft: `${sidebarWidth}rem` }}>
         <div 
           className="flex absolute h-full" 
           style={{ 
@@ -261,17 +248,11 @@ const Timeline: React.FC<TimelineProps> = ({
         </div>
       </div>
       
-      <div className="flex-grow flex overflow-hidden animate-fade-in animation-delay-200" ref={timelineRef}>
+      <div className="flex-grow flex overflow-hidden" ref={timelineRef}>
         <div className="flex-none bg-background z-10 shadow-md">
           {Object.entries(groupedCommits).map(([groupName, groupCommits], groupIndex) => (
             groupCommits.length > 0 && (
-              <div 
-                key={groupName} 
-                className="group/row border-b min-h-[80px] flex items-center"
-                style={{ 
-                  animation: `fade-in 0.4s ease-out ${0.2 + (groupIndex * 0.05)}s both` 
-                }}
-              >
+              <div key={groupName} className="group/row border-b min-h-[80px] flex items-center">
                 <div className={cn(
                   "bg-background/90 backdrop-blur-md p-3 font-medium flex items-center",
                   isChatOpen ? "w-32" : "w-40"
@@ -295,13 +276,7 @@ const Timeline: React.FC<TimelineProps> = ({
           <div style={{ width: `${timelineWidth}px`, minWidth: '100%' }}>
             {Object.entries(groupedCommits).map(([groupName, groupCommits], groupIndex) => (
               groupCommits.length > 0 && (
-                <div 
-                  key={groupName} 
-                  className="group/row border-b min-h-[80px] relative"
-                  style={{ 
-                    animation: `fade-in 0.4s ease-out ${0.2 + (groupIndex * 0.05)}s both` 
-                  }}
-                >
+                <div key={groupName} className="group/row border-b min-h-[80px] relative">
                   <div className="absolute inset-0 flex pointer-events-none">
                     {timeIntervals.map((interval, index) => {
                       const hasCommits = intervalsWithCommits[index];
@@ -321,7 +296,7 @@ const Timeline: React.FC<TimelineProps> = ({
                     })}
                   </div>
                   
-                  {clusterCommits(groupCommits, groupName).map((cluster, clusterIndex) => {
+                  {clusterCommits(groupCommits, groupName).map((cluster) => {
                     // Calculate left position based on dynamic column widths
                     let leftPosition = 0;
                     for (let i = 0; i < cluster.intervalIndex; i++) {
@@ -342,7 +317,7 @@ const Timeline: React.FC<TimelineProps> = ({
                             <TooltipTrigger asChild>
                               <button
                                 className={cn(
-                                  'absolute top-1/2 transform -translate-y-1/2 -translate-x-1/2 h-6 w-6 rounded-full',
+                                  'absolute top-1/2 transform -translate-y-1/2 -translate-x-1/2 h-7 w-7 rounded-full',
                                   'flex items-center justify-center transition-all duration-300',
                                   'z-10 hover:z-30 hover:scale-125 hover:shadow-lg',
                                   getCommitTypeColor(commitType),
@@ -351,10 +326,7 @@ const Timeline: React.FC<TimelineProps> = ({
                                   isCommitHighlighted && 
                                     'ring-2 ring-offset-2 ring-yellow-400 scale-125 z-30 highlighted-commit animate-pulse'
                                 )}
-                                style={{ 
-                                  left: `${leftPosition}px`,
-                                  animation: `scale-in 0.3s ease-out ${0.3 + (clusterIndex * 0.04)}s both`
-                                }}
+                                style={{ left: `${leftPosition}px` }}
                                 onClick={() => onCommitSelect(commit.sha)}
                                 onMouseEnter={() => setHoveredCommit(commit.sha)}
                                 onMouseLeave={() => setHoveredCommit(null)}
@@ -429,10 +401,7 @@ const Timeline: React.FC<TimelineProps> = ({
                                   hasHighlightedCommits && 
                                     'ring-2 ring-offset-2 ring-yellow-400 highlighted-commit animate-pulse'
                                 )}
-                                style={{ 
-                                  left: `${leftPosition}px`,
-                                  animation: `scale-in 0.3s ease-out ${0.3 + (clusterIndex * 0.04)}s both`
-                                }}
+                                style={{ left: `${leftPosition}px` }}
                                 onClick={() => handleClusterClick(cluster)}
                               >
                                 <Layers className="h-5 w-5" />
@@ -487,7 +456,7 @@ const Timeline: React.FC<TimelineProps> = ({
             <DialogTitle>Commit Cluster</DialogTitle>
           </DialogHeader>
           <div className="mt-4 space-y-4">
-            {selectedCluster?.commits.map((commit, index) => {
+            {selectedCluster?.commits.map((commit) => {
               const analyses = commit.commit_analyses || commit.commit_analises || [];
               const analysis = analyses[0];
               const commitType = analysis?.type || 'CHORE';
@@ -502,9 +471,6 @@ const Timeline: React.FC<TimelineProps> = ({
                     isCommitHighlighted && "ring-2 ring-yellow-400 bg-yellow-50 dark:bg-yellow-900/20"
                   )}
                   onClick={() => handleCommitSelectFromCluster(commit.sha)}
-                  style={{ 
-                    animation: `fade-in 0.2s ease-out ${0.1 + (index * 0.03)}s both` 
-                  }}
                 >
                   <div className="flex justify-between items-start mb-2">
                     <div className="flex items-center gap-2">
