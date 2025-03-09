@@ -12,12 +12,15 @@ import SidebarChat from '@/components/ui/sidebar-chat';
 import Metadata from '@/components/seo/metadata';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Loader2, RefreshCw } from 'lucide-react';
+import { ArrowLeft, Loader2, RefreshCw, Lock } from 'lucide-react';
 import { Commit, TimelineFilters, TimeScale, GroupBy } from '@/types';
 import { filterCommits } from '@/utils/filter-utils';
 import { fetchCommitsForRepo, checkRepoExists } from '@/lib/supabase';
 import { useChat } from '@/contexts/chat-context';
+import { useAuth } from '@/contexts/auth-context';
 import { cn } from '@/lib/utils';
+import LoginButton from '@/components/ui/login-button';
+import UserMenu from '@/components/ui/user-menu';
 
 const mockCommits: Commit[] = [
   {
@@ -258,6 +261,7 @@ const TimelinePage: React.FC = () => {
   const repoParam = searchParams.get('repo');
   const exampleParam = searchParams.get('example');
   const { isChatOpen } = useChat();
+  const { isAuthenticated, user, accessToken } = useAuth();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -332,6 +336,15 @@ const TimelinePage: React.FC = () => {
     setIsLoading(true);
     try {
       console.log('Handling repository submit:', repoName, 'exists:', repoExists);
+      
+      const isPrivateRepo = url.includes('/private/');
+      if (isPrivateRepo && !isAuthenticated) {
+        toast.error('Authentication required', {
+          description: 'Please log in with GitHub to access private repositories.',
+        });
+        setIsLoading(false);
+        return;
+      }
       
       if (repoExists) {
         console.log('Repository already exists in Supabase, navigating...');
@@ -412,16 +425,26 @@ const TimelinePage: React.FC = () => {
       <Header />
       
       <main className={cn("flex-grow container py-8", isChatOpen && "pr-[420px] transition-all duration-300")}>
-        <Button
-          variant="ghost"
-          className="mb-6"
-          onClick={() => navigate('/')}
-        >
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to Home
-        </Button>
-        
         <div className="flex justify-between items-center mb-6">
+          <Button
+            variant="ghost"
+            className="mb-0"
+            onClick={() => navigate('/')}
+          >
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Home
+          </Button>
+          
+          <div className="flex items-center gap-2">
+            {isAuthenticated ? (
+              <UserMenu />
+            ) : (
+              <LoginButton variant="outline" size="sm" />
+            )}
+          </div>
+        </div>
+        
+        <div className="flex justify-between items-center mb-6 mt-4">
           <h1 className="text-3xl font-bold animate-fade-in">
             {repoParam ? `Timeline: ${repoParam}` : 'Repository Timeline'}
           </h1>
@@ -443,6 +466,13 @@ const TimelinePage: React.FC = () => {
             onSubmit={handleRepositorySubmit} 
             isLoading={isLoading}
           />
+          
+          {!isAuthenticated && (
+            <div className="mt-2 flex items-center text-sm text-muted-foreground">
+              <Lock className="h-3 w-3 mr-1" />
+              <span>Login with GitHub to access private repositories</span>
+            </div>
+          )}
         </div>
         
         {isLoading ? (
