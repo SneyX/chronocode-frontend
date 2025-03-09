@@ -163,8 +163,8 @@ const Timeline: React.FC<TimelineProps> = ({
 
   // Adjust column width for intervals with and without commits
   const getColumnWidth = (index: number) => {
-    const baseWidth = Math.max(80, Math.min(200, 1200 / timeIntervals.length));
-    return intervalsWithCommits[index] ? baseWidth : Math.max(40, baseWidth * 0.6);
+    const baseWidth = Math.max(70, Math.min(180, 1000 / timeIntervals.length));
+    return intervalsWithCommits[index] ? baseWidth : Math.max(35, baseWidth * 0.6);
   };
   
   // Calculate total timeline width based on dynamic column widths
@@ -208,7 +208,7 @@ const Timeline: React.FC<TimelineProps> = ({
                 <div 
                   key={index} 
                   className={cn(
-                    "flex-none px-2 py-3 text-center text-xs font-medium border-r last:border-r-0",
+                    "flex-none px-2 py-4 text-center text-xs font-medium border-r last:border-r-0",
                     !hasCommits && "bg-muted/20 text-muted-foreground"
                   )}
                   style={{ width: `${columnWidth}px` }}
@@ -218,6 +218,33 @@ const Timeline: React.FC<TimelineProps> = ({
               );
             })}
           </div>
+        </div>
+      </div>
+      
+      {/* Empty spacing row to avoid overlap with header labels */}
+      <div className="flex-none h-4 bg-muted/10 relative" style={{ marginLeft: `${sidebarWidth}rem` }}>
+        <div 
+          className="flex absolute h-full" 
+          style={{ 
+            transform: `translateX(-${scrollPosition}px)`,
+            width: `${timelineWidth}px`
+          }}
+        >
+          {timeIntervals.map((_, index) => {
+            const hasCommits = intervalsWithCommits[index];
+            const columnWidth = getColumnWidth(index);
+            
+            return (
+              <div 
+                key={index} 
+                className={cn(
+                  "flex-none border-r last:border-r-0 h-full",
+                  !hasCommits && "bg-muted/20"
+                )}
+                style={{ width: `${columnWidth}px` }}
+              />
+            );
+          })}
         </div>
       </div>
       
@@ -290,7 +317,7 @@ const Timeline: React.FC<TimelineProps> = ({
                             <TooltipTrigger asChild>
                               <button
                                 className={cn(
-                                  'absolute top-1/2 transform -translate-y-1/2 -translate-x-1/2 h-8 w-8 rounded-full',
+                                  'absolute top-1/2 transform -translate-y-1/2 -translate-x-1/2 h-7 w-7 rounded-full',
                                   'flex items-center justify-center transition-all duration-300',
                                   'z-10 hover:z-30 hover:scale-125 hover:shadow-lg',
                                   getCommitTypeColor(commitType),
@@ -367,7 +394,7 @@ const Timeline: React.FC<TimelineProps> = ({
                             <TooltipTrigger asChild>
                               <button
                                 className={cn(
-                                  'absolute top-1/2 transform -translate-y-1/2 -translate-x-1/2 h-9 w-9 rounded-full',
+                                  'absolute top-1/2 transform -translate-y-1/2 -translate-x-1/2 h-8 w-8 rounded-full',
                                   'flex items-center justify-center transition-all duration-300',
                                   'z-10 hover:z-30 hover:scale-125 hover:shadow-lg border-2',
                                   getCommitTypeColor(dominantType),
