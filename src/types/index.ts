@@ -1,6 +1,5 @@
-
 // Commit Types
-export type CommitType = 'FEATURE' | 'WARNING' | 'MILESTONE' | 'BUG' | 'CHORE';
+export type CommitType = 'FEATURE' | 'BUG' | 'REFACTOR' | 'DOCS' | 'CHORE' | 'MILESTONE' | 'WARNING';
 
 // Repository
 export interface Repository {

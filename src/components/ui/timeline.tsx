@@ -1,12 +1,11 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Commit, TimeScale, GroupBy, CommitType } from '@/types';
-import { calculateTimeRange, generateTimeIntervals, formatTimeInterval, calculateCommitPosition, isCommitInInterval, getCommitIntervalIndex } from '@/utils/date-utils';
-import { groupCommits, getCommitTypeColor } from '@/utils/filter-utils';
-import { GitCommit, Sparkles, AlertTriangle, Trophy, Bug, Wrench, Layers } from 'lucide-react';
+import { calculateTimeRange, generateTimeIntervals, formatTimeInterval, calculateCommitPosition, isCommitInInterval } from '@/utils/date-utils';
+import { groupCommits, getCommitTypeColor, getCommitTypeIcon } from '@/utils/filter-utils';
+import { GitCommit, Sparkles, AlertTriangle, Trophy, Bug, Wrench, RefreshCw, FileText, Layers } from 'lucide-react';
 import { formatDate } from '@/utils/date-utils';
 import { cn } from '@/lib/utils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -56,13 +55,15 @@ const Timeline: React.FC<TimelineProps> = ({
 
   const groupedCommits = groupCommits(commits, groupBy);
   
-  const getCommitTypeIcon = (type: CommitType) => {
+  const getCommitTypeIconComponent = (type: CommitType) => {
     switch (type) {
       case 'FEATURE': return <Sparkles className="h-full w-full p-1" />;
       case 'WARNING': return <AlertTriangle className="h-full w-full p-1" />;
       case 'MILESTONE': return <Trophy className="h-full w-full p-1" />;
       case 'BUG': return <Bug className="h-full w-full p-1" />;
       case 'CHORE': return <Wrench className="h-full w-full p-1" />;
+      case 'REFACTOR': return <RefreshCw className="h-full w-full p-1" />;
+      case 'DOCS': return <FileText className="h-full w-full p-1" />;
       default: return <GitCommit className="h-full w-full p-1" />;
     }
   };
@@ -71,13 +72,11 @@ const Timeline: React.FC<TimelineProps> = ({
     const positionMap: Record<string, Commit[]> = {};
     
     commits.forEach(commit => {
-      // Find which interval this commit belongs to
       const intervalIndex = getCommitIntervalIndex(
         new Date(commit.date),
         timeIntervals
       );
       
-      // Create a unique key based on the interval index
       const key = `${intervalIndex}`;
       
       if (!positionMap[key]) {
@@ -89,7 +88,6 @@ const Timeline: React.FC<TimelineProps> = ({
     
     return Object.entries(positionMap).map(([key, groupedCommits]) => {
       const intervalIndex = parseInt(key, 10);
-      // Calculate the center position of the interval (50% of the interval width)
       const position = (intervalIndex + 0.5) * (100 / timeIntervals.length);
       
       return {
@@ -173,7 +171,7 @@ const Timeline: React.FC<TimelineProps> = ({
                         'h-6 w-6 mr-2 rounded-md flex items-center justify-center',
                         getCommitTypeColor(groupName as CommitType)
                       )}>
-                        {getCommitTypeIcon(groupName as CommitType)}
+                        {getCommitTypeIconComponent(groupName as CommitType)}
                       </div>
                     )}
                     <span className="truncate">{groupName}</span>
@@ -196,7 +194,6 @@ const Timeline: React.FC<TimelineProps> = ({
                     })}
                     
                     {clusterCommits(groupCommits, groupName).map((cluster) => {
-                      // Calculate the correct position based on interval index
                       const intervalWidth = 100 / timeIntervals.length;
                       const leftPosition = cluster.intervalIndex * intervalWidth + (intervalWidth / 2);
                       

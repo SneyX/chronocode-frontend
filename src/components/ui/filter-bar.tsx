@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { 
@@ -17,7 +16,7 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { CheckIcon, ClockIcon, FilterIcon, LayersIcon, SearchIcon, Users, XIcon } from 'lucide-react';
 import { Commit, CommitType, TimelineFilters, TimeScale, GroupBy } from '@/types';
-import { getUniqueAuthors, getCommitTypeColor, getUniqueEpics, getEpicColor } from '@/utils/filter-utils';
+import { getUniqueAuthors, getCommitTypeColor, getUniqueEpics, getEpicColor, getUniqueCommitTypes } from '@/utils/filter-utils';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 
@@ -44,7 +43,7 @@ const FilterBar: React.FC<FilterBarProps> = ({
 }) => {
   const authors = getUniqueAuthors(commits);
   const epics = getUniqueEpics(commits);
-  const commitTypes: CommitType[] = ['FEATURE', 'WARNING', 'MILESTONE', 'BUG', 'CHORE'];
+  const commitTypes = getUniqueCommitTypes(commits);
   
   const handleTypeToggle = (type: CommitType) => {
     if (filters.types.includes(type)) {
@@ -129,43 +128,45 @@ const FilterBar: React.FC<FilterBarProps> = ({
       </div>
       
       {/* Type Filter */}
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="outline" className="bg-background">
-            <FilterIcon className="h-4 w-4 mr-2" />
-            Type
-            {filters.types.length > 0 && (
-              <Badge variant="secondary" className="ml-2 h-5 px-1">
-                {filters.types.length}
-              </Badge>
-            )}
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent className="w-56">
-          <DropdownMenuLabel>Commit Types</DropdownMenuLabel>
-          <DropdownMenuSeparator />
-          <DropdownMenuGroup>
-            {commitTypes.map(type => (
-              <DropdownMenuItem key={type} onSelect={(e) => {
-                e.preventDefault();
-                handleTypeToggle(type);
-              }}>
-                <div className="flex items-center justify-between w-full">
-                  <div className="flex items-center">
-                    <Badge className={cn(
-                      'mr-2',
-                      getCommitTypeColor(type)
-                    )}>
-                      {type}
-                    </Badge>
+      {commitTypes.length > 0 && (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" className="bg-background">
+              <FilterIcon className="h-4 w-4 mr-2" />
+              Type
+              {filters.types.length > 0 && (
+                <Badge variant="secondary" className="ml-2 h-5 px-1">
+                  {filters.types.length}
+                </Badge>
+              )}
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="w-56">
+            <DropdownMenuLabel>Commit Types</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuGroup>
+              {commitTypes.map(type => (
+                <DropdownMenuItem key={type} onSelect={(e) => {
+                  e.preventDefault();
+                  handleTypeToggle(type);
+                }}>
+                  <div className="flex items-center justify-between w-full">
+                    <div className="flex items-center">
+                      <Badge className={cn(
+                        'mr-2',
+                        getCommitTypeColor(type)
+                      )}>
+                        {type}
+                      </Badge>
+                    </div>
+                    {filters.types.includes(type) && <CheckIcon className="h-4 w-4" />}
                   </div>
-                  {filters.types.includes(type) && <CheckIcon className="h-4 w-4" />}
-                </div>
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuGroup>
-        </DropdownMenuContent>
-      </DropdownMenu>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      )}
 
       {/* Epic Filter */}
       {epics.length > 0 && (

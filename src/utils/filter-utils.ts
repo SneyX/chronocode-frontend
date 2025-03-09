@@ -1,3 +1,4 @@
+
 import { Commit, CommitType, TimelineFilters } from '@/types';
 
 /**
@@ -73,9 +74,9 @@ export const groupCommits = (commits: Commit[], groupBy: 'type' | 'author' | 'da
   const grouped: Record<string, Commit[]> = {};
   
   if (groupBy === 'type') {
-    // Initialize groups for each commit type
-    const types: CommitType[] = ['FEATURE', 'WARNING', 'MILESTONE', 'BUG', 'CHORE'];
-    types.forEach(type => {
+    // Initialize groups for each commit type that exists in the commits
+    const uniqueTypes = getUniqueCommitTypes(commits);
+    uniqueTypes.forEach(type => {
       grouped[type] = [];
     });
     
@@ -90,11 +91,21 @@ export const groupCommits = (commits: Commit[], groupBy: 'type' | 'author' | 'da
           grouped[primaryType].push(commit);
         } else {
           // If analysis type is invalid, put in CHORE category
-          grouped['CHORE'].push(commit);
+          if (grouped['CHORE']) {
+            grouped['CHORE'].push(commit);
+          } else if (uniqueTypes.length > 0) {
+            // Fallback to first available type if CHORE doesn't exist
+            grouped[uniqueTypes[0]].push(commit);
+          }
         }
       } else {
-        // If no analysis, put in CHORE category
-        grouped['CHORE'].push(commit);
+        // If no analysis, put in CHORE category if it exists
+        if (grouped['CHORE']) {
+          grouped['CHORE'].push(commit);
+        } else if (uniqueTypes.length > 0) {
+          // Fallback to first available type if CHORE doesn't exist
+          grouped[uniqueTypes[0]].push(commit);
+        }
       }
     });
   } else if (groupBy === 'author') {
@@ -154,6 +165,26 @@ export const groupCommits = (commits: Commit[], groupBy: 'type' | 'author' | 'da
 };
 
 /**
+ * Gets all unique commit types that actually exist in the commits
+ */
+export const getUniqueCommitTypes = (commits: Commit[]): CommitType[] => {
+  const types = new Set<CommitType>();
+  
+  commits.forEach(commit => {
+    const analyses = commit.commit_analyses || commit.commit_analises || [];
+    
+    if (analyses && analyses.length > 0) {
+      const type = analyses[0].type;
+      if (type) {
+        types.add(type as CommitType);
+      }
+    }
+  });
+  
+  return Array.from(types);
+};
+
+/**
  * Gets all unique authors from the commits
  */
 export const getUniqueAuthors = (commits: Commit[]): string[] => {
@@ -181,6 +212,10 @@ export const getCommitTypeColor = (type: CommitType): string => {
       return 'bg-commit-bug text-white';
     case 'CHORE':
       return 'bg-commit-chore text-white';
+    case 'REFACTOR':
+      return 'bg-blue-500 text-white';
+    case 'DOCS':
+      return 'bg-purple-500 text-white';
     default:
       return 'bg-gray-400 text-white';
   }
@@ -201,6 +236,10 @@ export const getCommitTypeIcon = (type: CommitType): string => {
       return 'bug';
     case 'CHORE':
       return 'tool';
+    case 'REFACTOR':
+      return 'refresh-cw';
+    case 'DOCS':
+      return 'file-text';
     default:
       return 'git-commit';
   }
