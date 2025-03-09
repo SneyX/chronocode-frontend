@@ -41,3 +41,26 @@ export const getUserRepositories = async (token: string) => {
   
   return response.json() as Promise<Repository[]>;
 };
+
+export const analyzeRepository = async (repoUrl: string, token?: string) => {
+  const headers: HeadersInit = {
+    'Content-Type': 'application/json'
+  };
+  
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  
+  const response = await fetch(`${BACKEND_URL}/api/v1/analyze-commits`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ repository_url: repoUrl })
+  });
+  
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({ detail: 'Unknown error' }));
+    throw new Error(errorData.detail || 'Failed to analyze repository');
+  }
+  
+  return response.json();
+};
