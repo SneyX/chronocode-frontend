@@ -30,15 +30,23 @@ interface ChatProviderProps {
 export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
   const isMobile = useIsMobile();
   
-  // Set isChatOpen based on device - closed by default on mobile, open on desktop
+  // Start with chat closed by default on all devices
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [highlightedCommits, setHighlightedCommits] = useState<string[]>([]);
   const [currentQuestion, setCurrentQuestion] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   // Set initial state based on device when component mounts
   useEffect(() => {
-    setIsChatOpen(!isMobile);
+    // Use a small delay before initializing the chat state
+    // to ensure components are fully rendered first
+    const timer = setTimeout(() => {
+      setIsChatOpen(!isMobile);
+      setIsInitialized(true);
+    }, 500); // 500ms delay before opening on desktop
+    
+    return () => clearTimeout(timer);
   }, [isMobile]);
 
   const toggleChat = () => {
