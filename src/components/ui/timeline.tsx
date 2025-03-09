@@ -3,10 +3,17 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Commit, TimeScale, GroupBy, CommitType } from '@/types';
-import { calculateTimeRange, generateTimeIntervals, formatTimeInterval, calculateCommitPosition, isCommitInInterval } from '@/utils/date-utils';
+import { 
+  calculateTimeRange, 
+  generateTimeIntervals, 
+  formatTimeInterval, 
+  calculateCommitPosition, 
+  isCommitInInterval,
+  getCommitIntervalIndex,
+  formatDate
+} from '@/utils/date-utils';
 import { groupCommits, getCommitTypeColor, getCommitTypeIcon } from '@/utils/filter-utils';
 import { GitCommit, Sparkles, AlertTriangle, Trophy, Bug, Wrench, RefreshCw, FileText, Layers } from 'lucide-react';
-import { formatDate } from '@/utils/date-utils';
 import { cn } from '@/lib/utils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
