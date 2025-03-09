@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
@@ -40,6 +41,7 @@ const Timeline: React.FC<TimelineProps> = ({
     generateTimeIntervals(timeRange.start, timeRange.end, timeScale)
   );
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const timelineContentRef = useRef<HTMLDivElement>(null);
   const [hoveredCommit, setHoveredCommit] = useState<string | null>(null);
   const [openClusterDialog, setOpenClusterDialog] = useState(false);
   const [selectedCluster, setSelectedCluster] = useState<ClusteredCommit | null>(null);
@@ -51,6 +53,21 @@ const Timeline: React.FC<TimelineProps> = ({
     setTimeRange(range);
     setTimeIntervals(generateTimeIntervals(range.start, range.end, timeScale));
   }, [commits, timeScale]);
+
+  // Determine column width based on time scale
+  const getColumnWidth = () => {
+    switch (timeScale) {
+      case 'day': return 100;
+      case 'week': return 120;
+      case 'month': return 140;
+      case 'quarter': return 160;
+      case 'year': return 180;
+      default: return 120;
+    }
+  };
+
+  const columnWidth = getColumnWidth();
+  const totalWidth = timeIntervals.length * columnWidth;
 
   const groupedCommits = groupCommits(commits, groupBy);
   
@@ -69,13 +86,11 @@ const Timeline: React.FC<TimelineProps> = ({
     const positionMap: Record<number, Commit[]> = {};
     
     commits.forEach(commit => {
-      const position = calculateCommitPosition(
-        commit.date,
-        timeRange.start,
-        timeRange.end,
-        timeScale,
-        timeIntervals
-      );
+      const commitDate = new Date(commit.date);
+      const intervalIndex = getCommitIntervalIndex(commit.date, timeIntervals, timeScale);
+      
+      // Calculate position within the column (0-100%)
+      const position = intervalIndex * columnWidth + (columnWidth / 2);
       
       const roundedPosition = Math.round(position / 3) * 3;
       
@@ -134,15 +149,20 @@ const Timeline: React.FC<TimelineProps> = ({
         </div>
       )}
       
-      <div className="flex-none bg-muted/30 border-b">
+      <div className="flex-none bg-muted/30 border-b sticky top-0 z-20">
         <div className={cn(
           "flex",
           isChatOpen ? "pl-32" : "pl-40"
-        )}>
+        )} style={{ minWidth: totalWidth + (isChatOpen ? 128 : 160) }}>
+          <div className={cn(
+            "bg-background/90 backdrop-blur-md border-r flex-shrink-0 z-10",
+            isChatOpen ? "w-32" : "w-40"
+          )}></div>
           {timeIntervals.map((interval, index) => (
             <div 
               key={index} 
-              className="flex-1 px-2 py-3 text-center text-xs font-medium border-r last:border-r-0"
+              className="flex-shrink-0 px-2 py-3 text-center text-xs font-medium border-r last:border-r-0"
+              style={{ width: `${columnWidth}px` }}
             >
               {formatTimeInterval(interval, timeScale)}
             </div>
@@ -150,14 +170,14 @@ const Timeline: React.FC<TimelineProps> = ({
         </div>
       </div>
       
-      <ScrollArea className="flex-grow h-full" ref={scrollAreaRef}>
-        <div className="min-w-fit h-full">
+      <ScrollArea className="flex-grow h-full" orientation="both" ref={scrollAreaRef}>
+        <div className="min-w-fit h-full" style={{ width: totalWidth + (isChatOpen ? 128 : 160) }} ref={timelineContentRef}>
           {Object.entries(groupedCommits).map(([groupName, groupCommits], groupIndex) => (
             groupCommits.length > 0 && (
               <div key={groupName} className="group/row">
                 <div className="flex sticky left-0 z-20">
                   <div className={cn(
-                    "bg-background/90 backdrop-blur-md p-3 font-medium border-r flex items-center z-10",
+                    "bg-background/90 backdrop-blur-md p-3 font-medium border-r flex items-center z-10 flex-shrink-0",
                     isChatOpen ? "w-32" : "w-40"
                   )}>
                     {groupBy === 'type' && (
@@ -178,9 +198,10 @@ const Timeline: React.FC<TimelineProps> = ({
                         <div 
                           key={index} 
                           className={cn(
-                            "flex-1 relative min-w-[80px]", 
+                            "flex-shrink-0 relative", 
                             !isLastInterval && "border-r"
                           )}
+                          style={{ width: `${columnWidth}px`, minWidth: `${columnWidth}px` }}
                         >
                           <div className="absolute inset-0"></div>
                         </div>
@@ -188,8 +209,6 @@ const Timeline: React.FC<TimelineProps> = ({
                     })}
                     
                     {clusterCommits(groupCommits, groupName).map((cluster) => {
-                      const clampedPosition = Math.max(0, Math.min(100, cluster.position));
-                      
                       if (cluster.commits.length === 1) {
                         const commit = cluster.commits[0];
                         const analyses = commit.commit_analyses || commit.commit_analises || [];
@@ -214,7 +233,7 @@ const Timeline: React.FC<TimelineProps> = ({
                                     isCommitHighlighted && 
                                       'ring-2 ring-offset-2 ring-yellow-400 scale-125 z-30 highlighted-commit animate-pulse'
                                   )}
-                                  style={{ left: `${clampedPosition}%` }}
+                                  style={{ left: `${cluster.position}px` }}
                                   onClick={() => onCommitSelect(commit.sha)}
                                   onMouseEnter={() => setHoveredCommit(commit.sha)}
                                   onMouseLeave={() => setHoveredCommit(null)}
@@ -289,7 +308,7 @@ const Timeline: React.FC<TimelineProps> = ({
                                     hasHighlightedCommits && 
                                       'ring-2 ring-offset-2 ring-yellow-400 highlighted-commit animate-pulse'
                                   )}
-                                  style={{ left: `${clampedPosition}%` }}
+                                  style={{ left: `${cluster.position}px` }}
                                   onClick={() => handleClusterClick(cluster)}
                                 >
                                   <Layers className="h-5 w-5" />
