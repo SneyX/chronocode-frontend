@@ -25,7 +25,7 @@ const AuthContext = createContext<AuthContextType>({
 export const useAuth = () => useContext(AuthContext);
 
 // GitHub OAuth config
-const CLIENT_ID = import.meta.env.VITE_GITHUB_CLIENT_ID || 'your-github-client-id';
+const CLIENT_ID = 'Ov23li5BCYrzyRxv5cBC';
 const REDIRECT_URI = `${window.location.origin}/github/callback`;
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
