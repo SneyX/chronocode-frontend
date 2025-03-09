@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
@@ -54,7 +53,6 @@ const Timeline: React.FC<TimelineProps> = ({
     setTimeIntervals(generateTimeIntervals(range.start, range.end, timeScale));
   }, [commits, timeScale]);
 
-  // Determine column width based on time scale
   const getColumnWidth = () => {
     switch (timeScale) {
       case 'day': return 100;
@@ -89,7 +87,6 @@ const Timeline: React.FC<TimelineProps> = ({
       const commitDate = new Date(commit.date);
       const intervalIndex = getCommitIntervalIndex(commit.date, timeIntervals, timeScale);
       
-      // Calculate position within the column (0-100%)
       const position = intervalIndex * columnWidth + (columnWidth / 2);
       
       const roundedPosition = Math.round(position / 3) * 3;
@@ -149,35 +146,34 @@ const Timeline: React.FC<TimelineProps> = ({
         </div>
       )}
       
-      <div className="flex-none bg-muted/30 border-b sticky top-0 z-20">
-        <div className={cn(
-          "flex",
-          isChatOpen ? "pl-32" : "pl-40"
-        )} style={{ minWidth: totalWidth + (isChatOpen ? 128 : 160) }}>
+      <div className="relative flex-none bg-muted/30 border-b sticky top-0 z-20">
+        <div className="flex">
           <div className={cn(
-            "bg-background/90 backdrop-blur-md border-r flex-shrink-0 z-10",
+            "bg-background/90 backdrop-blur-md border-r flex-shrink-0 z-30 sticky left-0",
             isChatOpen ? "w-32" : "w-40"
           )}></div>
-          {timeIntervals.map((interval, index) => (
-            <div 
-              key={index} 
-              className="flex-shrink-0 px-2 py-3 text-center text-xs font-medium border-r last:border-r-0"
-              style={{ width: `${columnWidth}px` }}
-            >
-              {formatTimeInterval(interval, timeScale)}
-            </div>
-          ))}
+          <div className="flex" style={{ minWidth: totalWidth }}>
+            {timeIntervals.map((interval, index) => (
+              <div 
+                key={index} 
+                className="flex-shrink-0 px-2 py-3 text-center text-xs font-medium border-r last:border-r-0"
+                style={{ width: `${columnWidth}px` }}
+              >
+                {formatTimeInterval(interval, timeScale)}
+              </div>
+            ))}
+          </div>
         </div>
       </div>
       
-      <ScrollArea className="flex-grow h-full" orientation="both" ref={scrollAreaRef}>
-        <div className="min-w-fit h-full" style={{ width: totalWidth + (isChatOpen ? 128 : 160) }} ref={timelineContentRef}>
-          {Object.entries(groupedCommits).map(([groupName, groupCommits], groupIndex) => (
-            groupCommits.length > 0 && (
-              <div key={groupName} className="group/row">
-                <div className="flex sticky left-0 z-20">
+      <div className="flex-grow h-full relative">
+        <ScrollArea className="h-full" orientation="both" ref={scrollAreaRef}>
+          <div ref={timelineContentRef} style={{ minWidth: totalWidth + (isChatOpen ? 128 : 160) }}>
+            {Object.entries(groupedCommits).map(([groupName, groupCommits], groupIndex) => (
+              groupCommits.length > 0 && (
+                <div key={groupName} className="group/row flex">
                   <div className={cn(
-                    "bg-background/90 backdrop-blur-md p-3 font-medium border-r flex items-center z-10 flex-shrink-0",
+                    "bg-background/90 backdrop-blur-md p-3 font-medium border-r flex items-center z-30 flex-shrink-0 sticky left-0",
                     isChatOpen ? "w-32" : "w-40"
                   )}>
                     {groupBy === 'type' && (
@@ -215,8 +211,6 @@ const Timeline: React.FC<TimelineProps> = ({
                         const analysis = analyses[0];
                         const commitType = analysis?.type || 'CHORE';
                         const isCommitHighlighted = isHighlighted(commit.sha);
-                        
-                        const commitDate = new Date(commit.date);
                         
                         return (
                           <TooltipProvider key={commit.sha} delayDuration={200}>
@@ -352,11 +346,11 @@ const Timeline: React.FC<TimelineProps> = ({
                     })}
                   </div>
                 </div>
-              </div>
-            )
-          ))}
-        </div>
-      </ScrollArea>
+              )
+            ))}
+          </div>
+        </ScrollArea>
+      </div>
 
       <Dialog open={openClusterDialog} onOpenChange={setOpenClusterDialog}>
         <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
