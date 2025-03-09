@@ -14,7 +14,7 @@ import {
   formatDate
 } from '@/utils/date-utils';
 import { groupCommits, getCommitTypeColor } from '@/utils/filter-utils';
-import { GitCommit, Sparkles, AlertTriangle, Trophy, Bug, Wrench, RefreshCw, FileText, Layers } from 'lucide-react';
+import { GitCommit, Sparkles, AlertTriangle, Trophy, Bug, Wrench, RefreshCw, FileText, Layers, Calendar } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
@@ -46,7 +46,7 @@ const Timeline: React.FC<TimelineProps> = ({
 }) => {
   const [timeRange, setTimeRange] = useState(() => calculateTimeRange(commits, timeScale));
   const [timeIntervals, setTimeIntervals] = useState(() => 
-    generateTimeIntervals(timeRange.start, timeRange.end, timeScale)
+    generateTimeIntervals(timeRange.start, timeRange.end, timeScale, commits)
   );
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const timelineRef = useRef<HTMLDivElement>(null);
@@ -60,7 +60,7 @@ const Timeline: React.FC<TimelineProps> = ({
   useEffect(() => {
     const range = calculateTimeRange(commits, timeScale);
     setTimeRange(range);
-    setTimeIntervals(generateTimeIntervals(range.start, range.end, timeScale));
+    setTimeIntervals(generateTimeIntervals(range.start, range.end, timeScale, commits));
   }, [commits, timeScale]);
 
   const groupedCommits = groupCommits(commits, groupBy);
@@ -163,6 +163,11 @@ const Timeline: React.FC<TimelineProps> = ({
 
   // Adjust column width for intervals with and without commits
   const getColumnWidth = (index: number) => {
+    // If this is a gap interval, give it a fixed width
+    if (timeIntervals[index] && timeIntervals[index].isGap) {
+      return 120; // Fixed width for gap columns
+    }
+    
     const baseWidth = Math.max(70, Math.min(180, 1000 / timeIntervals.length));
     return intervalsWithCommits[index] ? baseWidth : Math.max(35, baseWidth * 0.6);
   };
@@ -202,6 +207,7 @@ const Timeline: React.FC<TimelineProps> = ({
           >
             {timeIntervals.map((interval, index) => {
               const hasCommits = intervalsWithCommits[index];
+              const isGapInterval = interval.isGap;
               const columnWidth = getColumnWidth(index);
               
               return (
@@ -209,11 +215,18 @@ const Timeline: React.FC<TimelineProps> = ({
                   key={index} 
                   className={cn(
                     "flex-none px-2 py-4 text-center text-xs font-medium border-r last:border-r-0",
-                    !hasCommits && "bg-muted/20 text-muted-foreground"
+                    isGapInterval ? "bg-muted/40 italic" : (!hasCommits && "bg-muted/20 text-muted-foreground")
                   )}
                   style={{ width: `${columnWidth}px` }}
                 >
-                  {formatTimeInterval(interval, timeScale)}
+                  {isGapInterval ? (
+                    <div className="flex items-center justify-center gap-1">
+                      <Calendar className="h-3 w-3" />
+                      <span>{formatTimeInterval(interval, timeScale)}</span>
+                    </div>
+                  ) : (
+                    formatTimeInterval(interval, timeScale)
+                  )}
                 </div>
               );
             })}
@@ -230,8 +243,9 @@ const Timeline: React.FC<TimelineProps> = ({
             width: `${timelineWidth}px`
           }}
         >
-          {timeIntervals.map((_, index) => {
+          {timeIntervals.map((interval, index) => {
             const hasCommits = intervalsWithCommits[index];
+            const isGapInterval = interval.isGap;
             const columnWidth = getColumnWidth(index);
             
             return (
@@ -239,7 +253,7 @@ const Timeline: React.FC<TimelineProps> = ({
                 key={index} 
                 className={cn(
                   "flex-none border-r last:border-r-0 h-full",
-                  !hasCommits && "bg-muted/20"
+                  isGapInterval ? "bg-muted/40" : (!hasCommits && "bg-muted/20")
                 )}
                 style={{ width: `${columnWidth}px` }}
               />
@@ -280,6 +294,7 @@ const Timeline: React.FC<TimelineProps> = ({
                   <div className="absolute inset-0 flex pointer-events-none">
                     {timeIntervals.map((interval, index) => {
                       const hasCommits = intervalsWithCommits[index];
+                      const isGapInterval = interval.isGap;
                       const columnWidth = getColumnWidth(index);
                       
                       return (
@@ -287,8 +302,10 @@ const Timeline: React.FC<TimelineProps> = ({
                           key={index}
                           className={cn(
                             "flex-none border-r last:border-r-0",
-                            index % 2 === 0 ? "bg-muted/5" : "",
-                            !hasCommits && "bg-muted/10"
+                            isGapInterval ? "bg-muted/40" : (
+                              index % 2 === 0 ? "bg-muted/5" : "",
+                              !hasCommits && "bg-muted/10"
+                            )
                           )}
                           style={{ width: `${columnWidth}px` }}
                         ></div>
@@ -302,7 +319,14 @@ const Timeline: React.FC<TimelineProps> = ({
                     for (let i = 0; i < cluster.intervalIndex; i++) {
                       leftPosition += getColumnWidth(i);
                     }
-                    leftPosition += getColumnWidth(cluster.intervalIndex) / 2;
+                    
+                    // If this is a gap interval, center the commit in the column
+                    if (timeIntervals[cluster.intervalIndex] && timeIntervals[cluster.intervalIndex].isGap) {
+                      leftPosition += getColumnWidth(cluster.intervalIndex) / 2;
+                    } else {
+                      // For regular intervals
+                      leftPosition += getColumnWidth(cluster.intervalIndex) / 2;
+                    }
                     
                     if (cluster.commits.length === 1) {
                       const commit = cluster.commits[0];
