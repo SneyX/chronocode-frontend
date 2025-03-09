@@ -6,7 +6,7 @@ import { Search, GitBranch, Loader2, ChevronDown, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { extractRepoNameFromUrl, checkRepoExists, getRepositoryByName } from '@/lib/supabase';
 import { useAuth } from '@/contexts/auth-context';
-import { getUserRepositories, Repository, analyzeRepository } from '@/services/github-service';
+import { getUserRepositories, Repository, analyzeRepository, createEmbeddingSpace } from '@/services/github-service';
 import { 
   DropdownMenu,
   DropdownMenuContent,
@@ -150,6 +150,15 @@ const RepositoryInput: React.FC<RepositoryInputProps> = ({
       console.log('Repository exists:', exists);
       
       if (exists) {
+        try {
+          console.log('Creating embedding space for existing repository');
+          await createEmbeddingSpace(url, token || undefined);
+          console.log('Embedding space created successfully');
+        } catch (error) {
+          console.error('Error creating embedding space:', error);
+          toast.error('Failed to create embedding space, but proceeding with analysis');
+        }
+        
         await onSubmit(url, repoName, exists);
       } else {
         setShowAnalysisDialog(true);
@@ -157,6 +166,16 @@ const RepositoryInput: React.FC<RepositoryInputProps> = ({
         
         try {
           await analyzeRepository(url, token || undefined);
+          
+          try {
+            console.log('Creating embedding space for new repository');
+            await createEmbeddingSpace(url, token || undefined);
+            console.log('Embedding space created successfully');
+          } catch (embeddingError) {
+            console.error('Error creating embedding space:', embeddingError);
+            toast.error('Failed to create embedding space, but analysis was completed');
+          }
+          
           setAnalysisProgress(100);
           toast.success('Repository analysis completed!');
           setTimeout(() => {

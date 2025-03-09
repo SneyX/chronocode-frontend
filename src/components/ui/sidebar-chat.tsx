@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -9,6 +10,7 @@ import { X, Send, Loader2, MessageCircle, HelpCircle, GitCommit } from 'lucide-r
 import { toast } from 'sonner';
 import { useChat } from '@/contexts/chat-context';
 import CommitModal from '@/components/ui/commit-modal';
+import { queryCommits } from '@/services/github-service';
 
 interface Message {
   id: string;
@@ -20,8 +22,10 @@ interface Message {
 
 interface SidebarChatProps {
   repoName?: string;
+  repoId?: string;
   commits: Commit[];
   className?: string;
+  isExample?: boolean;
 }
 
 // Predefined questions with their responses and related commits
@@ -73,8 +77,10 @@ const mockResponses: Record<string, { response: string; relatedCommits: string[]
 
 const SidebarChat: React.FC<SidebarChatProps> = ({
   repoName,
+  repoId,
   commits,
-  className
+  className,
+  isExample = false
 }) => {
   const { isChatOpen, toggleChat, setHighlightedCommits, setCurrentQuestion, isLoading, setIsLoading } = useChat();
   const [messages, setMessages] = useState<Message[]>([
@@ -111,52 +117,95 @@ const SidebarChat: React.FC<SidebarChatProps> = ({
     setInputValue('');
     setIsLoading(true);
     
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    // Find the best matching mock response
-    const lowerInput = inputValue.toLowerCase();
-    let matchedResponse = null;
-    let matchedTerm = '';
-    
-    for (const [term, data] of Object.entries(mockResponses)) {
-      if (lowerInput.includes(term)) {
-        // If we found a longer matching term, use it instead
-        if (term.length > matchedTerm.length) {
-          matchedResponse = data;
-          matchedTerm = term;
+    // For real repositories with repoId, use the queryCommits API
+    if (!isExample && repoId) {
+      try {
+        const response = await queryCommits({
+          repository_id: repoId,
+          query: userMessage.content,
+          k: 5 // Default to 5 results
+        });
+        
+        const botMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          content: response.response,
+          sender: 'assistant',
+          relatedCommits: response.relevant_commits,
+          timestamp: new Date()
+        };
+        
+        setMessages(prev => [...prev, botMessage]);
+        setHighlightedCommits(response.relevant_commits);
+        
+        if (response.relevant_commits.length > 0) {
+          toast.success('Found relevant commits!', {
+            description: `Click 'View Commits' to see ${response.relevant_commits.length} related commits.`
+          });
+        }
+      } catch (error) {
+        console.error('Error querying commits:', error);
+        
+        const errorMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          content: `I encountered an error while processing your request. ${error instanceof Error ? error.message : 'Please try again later.'}`,
+          sender: 'assistant',
+          timestamp: new Date()
+        };
+        
+        setMessages(prev => [...prev, errorMessage]);
+        setHighlightedCommits([]);
+      } finally {
+        setIsLoading(false);
+      }
+    } else {
+      // Use mock responses for example repositories
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      // Find the best matching mock response
+      const lowerInput = inputValue.toLowerCase();
+      let matchedResponse = null;
+      let matchedTerm = '';
+      
+      for (const [term, data] of Object.entries(mockResponses)) {
+        if (lowerInput.includes(term)) {
+          // If we found a longer matching term, use it instead
+          if (term.length > matchedTerm.length) {
+            matchedResponse = data;
+            matchedTerm = term;
+          }
         }
       }
+      
+      if (matchedResponse) {
+        const botMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          content: matchedResponse.response,
+          sender: 'assistant',
+          relatedCommits: matchedResponse.relatedCommits,
+          timestamp: new Date()
+        };
+        
+        setMessages(prev => [...prev, botMessage]);
+        setHighlightedCommits(matchedResponse.relatedCommits);
+        
+        toast.success('Found relevant commits!', {
+          description: `Click 'View Commits' to see ${matchedResponse.relatedCommits.length} related commits.`
+        });
+      } else {
+        const botMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          content: `I couldn't find specific information about that in the repository. Try asking about authentication, performance, security, or user management features.`,
+          sender: 'assistant',
+          timestamp: new Date()
+        };
+        
+        setMessages(prev => [...prev, botMessage]);
+        setHighlightedCommits([]);
+      }
+      
+      setIsLoading(false);
     }
-    
-    if (matchedResponse) {
-      const botMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        content: matchedResponse.response,
-        sender: 'assistant',
-        relatedCommits: matchedResponse.relatedCommits,
-        timestamp: new Date()
-      };
-      
-      setMessages(prev => [...prev, botMessage]);
-      setHighlightedCommits(matchedResponse.relatedCommits);
-      
-      toast.success('Found relevant commits!', {
-        description: `Click 'View Commits' to see ${matchedResponse.relatedCommits.length} related commits.`
-      });
-    } else {
-      const botMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        content: `I couldn't find specific information about that in the repository. Try asking about authentication, performance, security, or user management features.`,
-        sender: 'assistant',
-        timestamp: new Date()
-      };
-      
-      setMessages(prev => [...prev, botMessage]);
-      setHighlightedCommits([]);
-    }
-    
-    setIsLoading(false);
   };
 
   const handleViewCommits = (commitIds: string[]) => {
@@ -177,26 +226,68 @@ const SidebarChat: React.FC<SidebarChatProps> = ({
     setCurrentQuestion(question);
     setIsLoading(true);
     
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    // Add assistant message
-    const botMessage: Message = {
-      id: (Date.now() + 1).toString(),
-      content: response,
-      sender: 'assistant',
-      relatedCommits: relatedCommits,
-      timestamp: new Date()
-    };
-    
-    setMessages(prev => [...prev, botMessage]);
-    setHighlightedCommits(relatedCommits);
-    
-    toast.success('Found relevant commits!', {
-      description: `Click 'View Commits' to see ${relatedCommits.length} related commits.`
-    });
-    
-    setIsLoading(false);
+    // For real repositories with repoId, use the queryCommits API instead of predefined responses
+    if (!isExample && repoId) {
+      try {
+        const apiResponse = await queryCommits({
+          repository_id: repoId,
+          query: question,
+          k: 5
+        });
+        
+        const botMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          content: apiResponse.response,
+          sender: 'assistant',
+          relatedCommits: apiResponse.relevant_commits,
+          timestamp: new Date()
+        };
+        
+        setMessages(prev => [...prev, botMessage]);
+        setHighlightedCommits(apiResponse.relevant_commits);
+        
+        if (apiResponse.relevant_commits.length > 0) {
+          toast.success('Found relevant commits!', {
+            description: `Click 'View Commits' to see ${apiResponse.relevant_commits.length} related commits.`
+          });
+        }
+      } catch (error) {
+        console.error('Error querying commits:', error);
+        
+        const errorMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          content: `I encountered an error while processing your request. ${error instanceof Error ? error.message : 'Please try again later.'}`,
+          sender: 'assistant',
+          timestamp: new Date()
+        };
+        
+        setMessages(prev => [...prev, errorMessage]);
+      } finally {
+        setIsLoading(false);
+      }
+    } else {
+      // Use predefined responses for example repositories
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Add assistant message
+      const botMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        content: response,
+        sender: 'assistant',
+        relatedCommits: relatedCommits,
+        timestamp: new Date()
+      };
+      
+      setMessages(prev => [...prev, botMessage]);
+      setHighlightedCommits(relatedCommits);
+      
+      toast.success('Found relevant commits!', {
+        description: `Click 'View Commits' to see ${relatedCommits.length} related commits.`
+      });
+      
+      setIsLoading(false);
+    }
   };
   
   const handleKeyDown = (e: React.KeyboardEvent) => {

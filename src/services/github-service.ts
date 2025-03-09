@@ -69,3 +69,62 @@ export const analyzeRepository = async (repoUrl: string, token?: string) => {
   
   return response.json();
 };
+
+export const createEmbeddingSpace = async (repoUrl: string, token?: string) => {
+  const headers: HeadersInit = {
+    'Content-Type': 'application/json',
+    'Authorization': 'CHRONOCODE123'
+  };
+  
+  const body: Record<string, string> = {
+    repository_url: repoUrl
+  };
+  
+  if (token) {
+    body.access_token = token;
+  }
+  
+  const response = await fetch(`${BACKEND_URL}/api/v1/create-embedding-space`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(body)
+  });
+  
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({ detail: 'Unknown error' }));
+    throw new Error(errorData.detail || 'Failed to create embedding space');
+  }
+  
+  return response.json();
+};
+
+export interface QueryCommitsParams {
+  repository_id: string;
+  query: string;
+  k?: number;
+}
+
+export interface QueryCommitsResponse {
+  response: string;
+  relevant_commits: string[];
+}
+
+export const queryCommits = async (params: QueryCommitsParams): Promise<QueryCommitsResponse> => {
+  const headers: HeadersInit = {
+    'Content-Type': 'application/json',
+    'Authorization': 'CHRONOCODE123'
+  };
+  
+  const response = await fetch(`${BACKEND_URL}/api/v1/query-commits`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(params)
+  });
+  
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({ detail: 'Unknown error' }));
+    throw new Error(errorData.detail || 'Failed to query commits');
+  }
+  
+  return response.json();
+};
