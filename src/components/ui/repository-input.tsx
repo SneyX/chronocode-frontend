@@ -35,6 +35,7 @@ const RepositoryInput: React.FC<RepositoryInputProps> = ({
   const [searchValue, setSearchValue] = useState('');
   const [isLoadingRepos, setIsLoadingRepos] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const dropdownTriggerRef = useRef<HTMLButtonElement>(null);
   
   const { isAuthenticated, token } = useAuth();
   
@@ -125,6 +126,17 @@ const RepositoryInput: React.FC<RepositoryInputProps> = ({
     setUrl('');
   };
 
+  const handleDropdownToggle = () => {
+    setDropdownOpen(!dropdownOpen);
+    if (!dropdownOpen) {
+      setSearchValue('');
+    }
+  };
+
+  const handleCloseDropdown = () => {
+    setDropdownOpen(false);
+  };
+
   return (
     <form 
       onSubmit={handleSubmit} 
@@ -138,84 +150,90 @@ const RepositoryInput: React.FC<RepositoryInputProps> = ({
           <GitBranch className="text-primary w-5 h-5 mr-3 flex-shrink-0" />
           
           {isAuthenticated ? (
-            <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
-              <DropdownMenuTrigger asChild>
-                <div className="flex-1 flex items-center cursor-pointer">
-                  <Input
-                    type="text"
-                    value={url}
-                    onChange={(e) => setUrl(e.target.value)}
-                    placeholder="Select a repository or enter URL"
-                    className="border-0 bg-transparent shadow-none text-base py-6 focus-visible:ring-0 focus-visible:ring-offset-0 flex-1 cursor-pointer"
-                    readOnly={dropdownOpen}
-                  />
-                  {url ? (
-                    <Button 
-                      type="button" 
-                      variant="ghost" 
-                      size="icon" 
-                      className="h-8 w-8 mr-1" 
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleClearInput();
-                      }}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  ) : (
-                    <ChevronDown className="h-4 w-4 text-muted-foreground mr-1" />
-                  )}
-                </div>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent 
-                className="w-[96%] bg-card border-card-border shadow-md" 
-                align="start" 
-                side="bottom" 
-                sideOffset={8}
-                onCloseAutoFocus={(e) => e.preventDefault()}
-              >
-                <div className="p-2 sticky top-0 bg-card z-10 border-b">
-                  <Input
-                    ref={searchInputRef}
-                    value={searchValue}
-                    onChange={(e) => setSearchValue(e.target.value)}
-                    placeholder="Search repositories..."
-                    className="w-full h-9"
-                    autoFocus
-                  />
-                </div>
-                <ScrollArea className="max-h-[300px] overflow-y-auto">
-                  {isLoadingRepos ? (
-                    <div className="flex items-center justify-center py-6">
-                      <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-                    </div>
-                  ) : filteredRepos.length > 0 ? (
-                    filteredRepos.map((repo) => (
-                      <DropdownMenuItem 
-                        key={repo.id} 
-                        className="py-3 px-3 cursor-pointer"
-                        onClick={() => handleRepositorySelect(repo)}
-                      >
-                        <div className="flex flex-col w-full">
-                          <div className="font-medium">{repo.name}</div>
-                          <div className="text-xs text-muted-foreground mt-1 flex justify-between items-center">
-                            <span>{repo.full_name}</span>
-                            <div className="flex items-center space-x-2 text-xs">
-                              <span>⭐ {repo.stargazers_count}</span>
-                              <span>🍴 {repo.forks_count}</span>
+            <div className="flex-1 flex items-center">
+              <Input
+                type="text"
+                value={url}
+                onChange={(e) => setUrl(e.target.value)}
+                placeholder="Enter repository URL or select from dropdown"
+                className="border-0 bg-transparent shadow-none text-base py-6 focus-visible:ring-0 focus-visible:ring-offset-0 flex-1"
+              />
+              {url && (
+                <Button 
+                  type="button" 
+                  variant="ghost" 
+                  size="icon" 
+                  className="h-8 w-8 mr-1" 
+                  onClick={handleClearInput}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              )}
+              <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
+                <DropdownMenuTrigger asChild>
+                  <Button 
+                    ref={dropdownTriggerRef}
+                    type="button" 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-8 w-8" 
+                    onClick={handleDropdownToggle}
+                  >
+                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent 
+                  className="w-[96%] bg-card border border-border shadow-md" 
+                  align="start" 
+                  side="bottom" 
+                  sideOffset={8}
+                  onEscapeKeyDown={handleCloseDropdown}
+                  onInteractOutside={handleCloseDropdown}
+                >
+                  <div className="p-2 sticky top-0 bg-card z-10 border-b">
+                    <Input
+                      ref={searchInputRef}
+                      value={searchValue}
+                      onChange={(e) => setSearchValue(e.target.value)}
+                      placeholder="Search repositories..."
+                      className="w-full h-9"
+                      autoFocus
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                  </div>
+                  <ScrollArea className="max-h-[300px] overflow-y-auto">
+                    {isLoadingRepos ? (
+                      <div className="flex items-center justify-center py-6">
+                        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                      </div>
+                    ) : filteredRepos.length > 0 ? (
+                      filteredRepos.map((repo) => (
+                        <DropdownMenuItem 
+                          key={repo.id} 
+                          className="py-3 px-3 cursor-pointer"
+                          onClick={() => handleRepositorySelect(repo)}
+                        >
+                          <div className="flex flex-col w-full">
+                            <div className="font-medium">{repo.name}</div>
+                            <div className="text-xs text-muted-foreground mt-1 flex justify-between items-center">
+                              <span>{repo.full_name}</span>
+                              <div className="flex items-center space-x-2 text-xs">
+                                <span>⭐ {repo.stargazers_count}</span>
+                                <span>🍴 {repo.forks_count}</span>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      </DropdownMenuItem>
-                    ))
-                  ) : (
-                    <div className="py-4 px-3 text-center text-muted-foreground">
-                      {searchValue ? 'No repositories found' : 'No repositories available'}
-                    </div>
-                  )}
-                </ScrollArea>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                        </DropdownMenuItem>
+                      ))
+                    ) : (
+                      <div className="py-4 px-3 text-center text-muted-foreground">
+                        {searchValue ? 'No repositories found' : 'No repositories available'}
+                      </div>
+                    )}
+                  </ScrollArea>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           ) : (
             <Input
               type="text"
