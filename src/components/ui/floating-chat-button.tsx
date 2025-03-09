@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { MessageCircle } from 'lucide-react';
+import { MessageCircle, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useChat } from '@/contexts/chat-context';
@@ -25,9 +25,13 @@ const FloatingChatButton: React.FC<FloatingChatButtonProps> = ({
         isChatOpen ? "bg-primary/90 text-primary-foreground rotate-90" : "bg-gradient-to-br from-violet-500 to-purple-700 border-2 border-purple-300/20",
         className
       )}
-      aria-label="Open chat assistant"
+      aria-label={isChatOpen ? "Close chat assistant" : "Open chat assistant"}
     >
-      <MessageCircle className={cn("h-6 w-6", isChatOpen ? "rotate-180" : "")} />
+      {isChatOpen ? (
+        <X className="h-6 w-6 rotate-180" />
+      ) : (
+        <MessageCircle className="h-6 w-6" />
+      )}
     </Button>
   );
 };

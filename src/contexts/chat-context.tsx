@@ -27,7 +27,8 @@ interface ChatProviderProps {
 }
 
 export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
-  const [isChatOpen, setIsChatOpen] = useState(false);
+  // Set isChatOpen to true by default
+  const [isChatOpen, setIsChatOpen] = useState(true);
   const [highlightedCommits, setHighlightedCommits] = useState<string[]>([]);
   const [currentQuestion, setCurrentQuestion] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
