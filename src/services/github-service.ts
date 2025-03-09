@@ -1,4 +1,3 @@
-
 const BACKEND_URL = "https://backend-late-glitter-2411.fly.dev";
 
 export interface Repository {
@@ -65,6 +64,28 @@ export const analyzeRepository = async (repoUrl: string, token?: string) => {
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({ detail: 'Unknown error' }));
     throw new Error(errorData.detail || 'Failed to analyze repository');
+  }
+  
+  return response.json();
+};
+
+export const queryCommits = async (repositoryId: number, query: string, k: number = 10) => {
+  const response = await fetch(`${BACKEND_URL}/api/v1/query-commits`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'CHRONOCODE123'
+    },
+    body: JSON.stringify({
+      repository_id: String(repositoryId),
+      query: query,
+      k: k
+    })
+  });
+  
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({ detail: 'Unknown error' }));
+    throw new Error(errorData.detail || 'Failed to query commits');
   }
   
   return response.json();
