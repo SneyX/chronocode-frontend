@@ -1,5 +1,5 @@
 
-const BACKEND_URL = "https://backend-late-glitter-2411.fly.dev/api/v1/analyze-commits";
+const BACKEND_URL = "http://127.0.0.1:8000";
 
 export interface Repository {
   id: number;
