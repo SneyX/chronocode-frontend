@@ -26,7 +26,8 @@ export const useAuth = () => useContext(AuthContext);
 
 // GitHub OAuth config
 const CLIENT_ID = 'Iv23ligkIkh0DejY8j8v';
-const REDIRECT_URI = `${window.location.origin}/github/callback`;
+// Using the hardcoded redirect URI that matches what's registered in GitHub
+const REDIRECT_URI = 'https://preview--commit-timeline-genius-85.lovable.app/github/callback';
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
