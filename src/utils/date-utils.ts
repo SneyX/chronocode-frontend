@@ -1,3 +1,4 @@
+
 import { format, parse, addDays, addWeeks, addMonths, addYears, differenceInDays, differenceInWeeks, differenceInMonths, differenceInYears, isBefore, isAfter, isSameDay, isSameWeek, isSameMonth, isSameQuarter, isSameYear, startOfDay, startOfWeek, startOfMonth, startOfQuarter, startOfYear, endOfDay, endOfWeek, endOfMonth, endOfQuarter, endOfYear, differenceInMilliseconds } from 'date-fns';
 import { TimeScale } from '@/types';
 
@@ -193,11 +194,9 @@ export const isSameScalePeriod = (date1: Date, date2: Date, scale: TimeScale): b
 /**
  * Get the interval index for a commit (which column it should appear in)
  */
-export const getCommitIntervalIndex = (commitDate: string, intervals: Date[], scale: TimeScale): number => {
-  const date = new Date(commitDate);
-  
+export const getCommitIntervalIndex = (commitDate: Date, intervals: Date[], scale: TimeScale): number => {
   for (let i = 0; i < intervals.length - 1; i++) {
-    if (isCommitInInterval(commitDate, intervals[i], intervals[i + 1], scale)) {
+    if (isCommitInInterval(commitDate.toISOString(), intervals[i], intervals[i + 1], scale)) {
       return i;
     }
   }
@@ -217,7 +216,7 @@ export const calculateCommitPosition = (
   intervals: Date[]
 ): number => {
   // Find which interval the commit falls into
-  const intervalIndex = getCommitIntervalIndex(commitDate, intervals, scale);
+  const intervalIndex = getCommitIntervalIndex(new Date(commitDate), intervals, scale);
   
   // Ensure we don't go out of bounds
   if (intervalIndex < 0) return 0;
