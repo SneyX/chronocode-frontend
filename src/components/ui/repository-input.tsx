@@ -82,12 +82,12 @@ const RepositoryInput: React.FC<RepositoryInputProps> = ({
     e.preventDefault();
     
     if (!url.trim()) {
-      toast.error('Please select a repository');
+      toast.error('Please enter a repository URL');
       return;
     }
     
     if (!validateUrl(url)) {
-      toast.error('Please select a valid GitHub repository');
+      toast.error('Please enter a valid GitHub repository URL');
       return;
     }
     
@@ -121,15 +121,8 @@ const RepositoryInput: React.FC<RepositoryInputProps> = ({
     setDropdownOpen(false);
   };
   
-  const handleClearInput = (e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleClearInput = () => {
     setUrl('');
-  };
-
-  const handleToggleDropdown = () => {
-    if (isAuthenticated && token) {
-      setDropdownOpen(!dropdownOpen);
-    }
   };
 
   return (
@@ -147,23 +140,25 @@ const RepositoryInput: React.FC<RepositoryInputProps> = ({
           {isAuthenticated ? (
             <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
               <DropdownMenuTrigger asChild>
-                <div className="flex-1 flex items-center cursor-pointer" onClick={handleToggleDropdown}>
-                  <div className="flex-1 relative">
-                    <Input
-                      type="text"
-                      value={url}
-                      readOnly={true}
-                      placeholder="Select a repository"
-                      className="border-0 bg-transparent shadow-none text-base py-6 focus-visible:ring-0 focus-visible:ring-offset-0 flex-1 cursor-pointer"
-                    />
-                  </div>
+                <div className="flex-1 flex items-center cursor-pointer">
+                  <Input
+                    type="text"
+                    value={url}
+                    onChange={(e) => setUrl(e.target.value)}
+                    placeholder="Select a repository or enter URL"
+                    className="border-0 bg-transparent shadow-none text-base py-6 focus-visible:ring-0 focus-visible:ring-offset-0 flex-1 cursor-pointer"
+                    readOnly={dropdownOpen}
+                  />
                   {url ? (
                     <Button 
                       type="button" 
                       variant="ghost" 
                       size="icon" 
                       className="h-8 w-8 mr-1" 
-                      onClick={handleClearInput}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleClearInput();
+                      }}
                     >
                       <X className="h-4 w-4" />
                     </Button>
@@ -173,7 +168,7 @@ const RepositoryInput: React.FC<RepositoryInputProps> = ({
                 </div>
               </DropdownMenuTrigger>
               <DropdownMenuContent 
-                className="w-[96%] bg-card border border-card-border shadow-md rounded-md" 
+                className="w-[96%] bg-card border-card-border shadow-md" 
                 align="start" 
                 side="bottom" 
                 sideOffset={8}
@@ -187,7 +182,6 @@ const RepositoryInput: React.FC<RepositoryInputProps> = ({
                     placeholder="Search repositories..."
                     className="w-full h-9"
                     autoFocus
-                    onClick={(e) => e.stopPropagation()}
                   />
                 </div>
                 <ScrollArea className="max-h-[300px] overflow-y-auto">
