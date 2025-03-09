@@ -274,7 +274,13 @@ const RepositoryInput: React.FC<RepositoryInputProps> = ({
                     side="bottom" 
                     sideOffset={8}
                     onEscapeKeyDown={handleCloseDropdown}
-                    onInteractOutside={handleCloseDropdown}
+                    onInteractOutside={(e) => {
+                      // Don't close dropdown if clicking on the search input
+                      const target = e.target as Node;
+                      if (searchInputRef.current && !searchInputRef.current.contains(target)) {
+                        handleCloseDropdown();
+                      }
+                    }}
                   >
                     <div className="p-2 sticky top-0 bg-card z-10 border-b">
                       <Input
@@ -284,7 +290,14 @@ const RepositoryInput: React.FC<RepositoryInputProps> = ({
                         placeholder="Search repositories..."
                         className="w-full h-9"
                         autoFocus
+                        // Prevent dropdown from closing when clicking the input
                         onClick={(e) => e.stopPropagation()}
+                        // Prevent form submission when pressing Enter in search
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                          }
+                        }}
                       />
                     </div>
                     <ScrollArea className="max-h-[300px] overflow-y-auto">
