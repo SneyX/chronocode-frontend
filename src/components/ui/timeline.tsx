@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
@@ -88,8 +87,9 @@ const Timeline: React.FC<TimelineProps> = ({
     const positionMap: Record<string, Commit[]> = {};
     
     commits.forEach(commit => {
+      const commitDate = new Date(commit.date);
       const intervalIndex = getCommitIntervalIndex(
-        new Date(commit.date),
+        commitDate,
         timeIntervals,
         timeScale
       );
@@ -105,7 +105,6 @@ const Timeline: React.FC<TimelineProps> = ({
     
     return Object.entries(positionMap).map(([key, groupedCommits]) => {
       const intervalIndex = parseInt(key, 10);
-      // Center the commit in its column (position at 50% of column)
       const position = intervalIndex * (100 / (timeIntervals.length - 1 || 1));
       
       return {
@@ -141,7 +140,6 @@ const Timeline: React.FC<TimelineProps> = ({
     }
   }, [highlightedCommits]);
 
-  // Calculate column width based on number of intervals
   const columnWidth = Math.max(80, Math.min(200, 1200 / timeIntervals.length));
   const timelineWidth = columnWidth * timeIntervals.length;
   const sidebarWidth = isChatOpen ? 8 : 10; // rem units
@@ -163,7 +161,6 @@ const Timeline: React.FC<TimelineProps> = ({
         </div>
       )}
       
-      {/* Time period headers - fixed and synced with scrollable content */}
       <div className="flex-none bg-muted/30 border-b relative">
         <div className="flex" style={{ marginLeft: `${sidebarWidth}rem` }}>
           <div 
@@ -186,9 +183,7 @@ const Timeline: React.FC<TimelineProps> = ({
         </div>
       </div>
       
-      {/* Main timeline content - scrollable */}
       <div className="flex-grow flex overflow-hidden" ref={timelineRef}>
-        {/* Fixed sidebar */}
         <div className="flex-none bg-background z-10 shadow-md">
           {Object.entries(groupedCommits).map(([groupName, groupCommits], groupIndex) => (
             groupCommits.length > 0 && (
@@ -212,13 +207,11 @@ const Timeline: React.FC<TimelineProps> = ({
           ))}
         </div>
         
-        {/* Scrollable timeline grid */}
         <div className="flex-grow overflow-x-auto" onScroll={handleScroll}>
           <div style={{ width: `${timelineWidth}px`, minWidth: '100%' }}>
             {Object.entries(groupedCommits).map(([groupName, groupCommits], groupIndex) => (
               groupCommits.length > 0 && (
                 <div key={groupName} className="group/row border-b min-h-[80px] relative">
-                  {/* Grid columns */}
                   <div className="absolute inset-0 flex pointer-events-none">
                     {timeIntervals.map((interval, index) => (
                       <div 
@@ -232,9 +225,7 @@ const Timeline: React.FC<TimelineProps> = ({
                     ))}
                   </div>
                   
-                  {/* Commit markers */}
                   {clusterCommits(groupCommits, groupName).map((cluster) => {
-                    // Calculate center of the column
                     const leftPosition = (columnWidth * cluster.intervalIndex) + (columnWidth / 2);
                     
                     if (cluster.commits.length === 1) {
