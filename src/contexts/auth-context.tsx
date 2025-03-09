@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
 interface User {
@@ -23,7 +22,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const GITHUB_CLIENT_ID = "Iv23ligkIkh0DejY8j8v"; // Hardcoded GitHub OAuth app client ID
 const REDIRECT_URI = window.location.origin;
-const BACKEND_URL = "http://127.0.0.1:8000";
+const BACKEND_URL = "https://backend-late-glitter-2411.fly.dev/api/v1/analyze-commits";
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
