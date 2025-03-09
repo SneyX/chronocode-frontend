@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
@@ -25,6 +26,7 @@ interface TimelineProps {
 interface ClusteredCommit {
   position: number;
   commits: Commit[];
+  intervalIndex: number;
 }
 
 const Timeline: React.FC<TimelineProps> = ({
@@ -66,30 +68,36 @@ const Timeline: React.FC<TimelineProps> = ({
   };
 
   const clusterCommits = (commits: Commit[], groupName: string): ClusteredCommit[] => {
-    const positionMap: Record<number, Commit[]> = {};
+    const positionMap: Record<string, Commit[]> = {};
     
     commits.forEach(commit => {
-      const position = calculateCommitPosition(
-        commit.date,
-        timeRange.start,
-        timeRange.end,
-        timeScale,
+      // Find which interval this commit belongs to
+      const intervalIndex = getCommitIntervalIndex(
+        new Date(commit.date),
         timeIntervals
       );
       
-      const roundedPosition = Math.round(position / 3) * 3;
+      // Create a unique key based on the interval index
+      const key = `${intervalIndex}`;
       
-      if (!positionMap[roundedPosition]) {
-        positionMap[roundedPosition] = [];
+      if (!positionMap[key]) {
+        positionMap[key] = [];
       }
       
-      positionMap[roundedPosition].push(commit);
+      positionMap[key].push(commit);
     });
     
-    return Object.entries(positionMap).map(([pos, groupedCommits]) => ({
-      position: Number(pos),
-      commits: groupedCommits
-    }));
+    return Object.entries(positionMap).map(([key, groupedCommits]) => {
+      const intervalIndex = parseInt(key, 10);
+      // Calculate the center position of the interval (50% of the interval width)
+      const position = (intervalIndex + 0.5) * (100 / timeIntervals.length);
+      
+      return {
+        position,
+        commits: groupedCommits,
+        intervalIndex
+      };
+    });
   };
 
   const handleClusterClick = (cluster: ClusteredCommit) => {
@@ -188,7 +196,9 @@ const Timeline: React.FC<TimelineProps> = ({
                     })}
                     
                     {clusterCommits(groupCommits, groupName).map((cluster) => {
-                      const clampedPosition = Math.max(0, Math.min(100, cluster.position));
+                      // Calculate the correct position based on interval index
+                      const intervalWidth = 100 / timeIntervals.length;
+                      const leftPosition = cluster.intervalIndex * intervalWidth + (intervalWidth / 2);
                       
                       if (cluster.commits.length === 1) {
                         const commit = cluster.commits[0];
@@ -205,7 +215,7 @@ const Timeline: React.FC<TimelineProps> = ({
                               <TooltipTrigger asChild>
                                 <button
                                   className={cn(
-                                    'absolute top-1/2 transform -translate-y-1/2 h-8 w-8 rounded-full',
+                                    'absolute top-1/2 transform -translate-y-1/2 -translate-x-1/2 h-8 w-8 rounded-full',
                                     'flex items-center justify-center transition-all duration-300',
                                     'z-10 hover:z-30 hover:scale-125 hover:shadow-lg',
                                     getCommitTypeColor(commitType),
@@ -214,7 +224,7 @@ const Timeline: React.FC<TimelineProps> = ({
                                     isCommitHighlighted && 
                                       'ring-2 ring-offset-2 ring-yellow-400 scale-125 z-30 highlighted-commit animate-pulse'
                                   )}
-                                  style={{ left: `${clampedPosition}%` }}
+                                  style={{ left: `${leftPosition}%` }}
                                   onClick={() => onCommitSelect(commit.sha)}
                                   onMouseEnter={() => setHoveredCommit(commit.sha)}
                                   onMouseLeave={() => setHoveredCommit(null)}
@@ -277,19 +287,19 @@ const Timeline: React.FC<TimelineProps> = ({
                         ).length;
                         
                         return (
-                          <TooltipProvider key={`cluster-${cluster.position}`} delayDuration={200}>
+                          <TooltipProvider key={`cluster-${cluster.intervalIndex}`} delayDuration={200}>
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <button
                                   className={cn(
-                                    'absolute top-1/2 transform -translate-y-1/2 h-9 w-9 rounded-full',
+                                    'absolute top-1/2 transform -translate-y-1/2 -translate-x-1/2 h-9 w-9 rounded-full',
                                     'flex items-center justify-center transition-all duration-300',
                                     'z-10 hover:z-30 hover:scale-125 hover:shadow-lg border-2',
                                     getCommitTypeColor(dominantType),
                                     hasHighlightedCommits && 
                                       'ring-2 ring-offset-2 ring-yellow-400 highlighted-commit animate-pulse'
                                   )}
-                                  style={{ left: `${clampedPosition}%` }}
+                                  style={{ left: `${leftPosition}%` }}
                                   onClick={() => handleClusterClick(cluster)}
                                 >
                                   <Layers className="h-5 w-5" />
