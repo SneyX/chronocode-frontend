@@ -1,6 +1,5 @@
-
 import { format, parse, addDays, addWeeks, addMonths, addYears, differenceInDays, differenceInWeeks, differenceInMonths, differenceInYears, isBefore, isAfter, isSameDay, isSameWeek, isSameMonth, isSameQuarter, isSameYear, startOfDay, startOfWeek, startOfMonth, startOfQuarter, startOfYear, endOfDay, endOfWeek, endOfMonth, endOfQuarter, endOfYear, differenceInMilliseconds } from 'date-fns';
-import { TimeScale } from '@/types';
+import { TimeScale, Commit } from '@/types';
 
 /**
  * Formats a date string into a readable format
@@ -61,14 +60,15 @@ export const calculateTimeRange = (commits: { date: string }[], scale: TimeScale
 };
 
 /**
- * Generates time intervals for the timeline
+ * Generates time intervals for the timeline and filters out intervals without commits
  */
-export const generateTimeIntervals = (start: Date, end: Date, scale: TimeScale) => {
-  const intervals = [];
+export const generateTimeIntervals = (start: Date, end: Date, scale: TimeScale, commits: Commit[] = []) => {
+  // First generate all possible intervals
+  const allIntervals = [];
   let current = new Date(start);
 
   while (current <= end) {
-    intervals.push(new Date(current));
+    allIntervals.push(new Date(current));
     
     switch (scale) {
       case 'day':
@@ -89,13 +89,79 @@ export const generateTimeIntervals = (start: Date, end: Date, scale: TimeScale) 
     }
   }
 
-  return intervals;
+  // If no commits to check against, return all intervals
+  if (!commits.length) return allIntervals;
+
+  // Create a map to track which intervals have commits
+  const intervalsWithCommits = new Map<number, boolean>();
+  
+  // Mark intervals that contain commits
+  commits.forEach(commit => {
+    const commitDate = new Date(commit.date);
+    
+    allIntervals.forEach((interval, index) => {
+      const nextInterval = allIntervals[index + 1] || new Date(3000, 0, 1); // Far future date as fallback
+      
+      // Check if the commit falls in this interval
+      if (
+        (isAfter(commitDate, interval) || isSameScalePeriod(commitDate, interval, scale)) && 
+        (isBefore(commitDate, nextInterval) || (index === allIntervals.length - 1))
+      ) {
+        intervalsWithCommits.set(index, true);
+      }
+    });
+  });
+  
+  // Include intervals with commits and their adjacent intervals
+  // (to avoid visual jumps in the timeline)
+  const filteredIntervals: Date[] = [];
+  let addingAdjacent = false;
+  
+  allIntervals.forEach((interval, index) => {
+    const hasCommits = intervalsWithCommits.has(index);
+    const prevHasCommits = index > 0 && intervalsWithCommits.has(index - 1);
+    const nextHasCommits = index < allIntervals.length - 1 && intervalsWithCommits.has(index + 1);
+    
+    // Always include first and last intervals
+    if (index === 0 || index === allIntervals.length - 1) {
+      filteredIntervals.push(interval);
+      return;
+    }
+    
+    // Include intervals with commits
+    if (hasCommits) {
+      filteredIntervals.push(interval);
+      addingAdjacent = false;
+      return;
+    }
+    
+    // Include intervals adjacent to intervals with commits
+    if (prevHasCommits || nextHasCommits) {
+      filteredIntervals.push(interval);
+      addingAdjacent = false;
+      return;
+    }
+    
+    // For long gaps with no commits, add just one interval as a placeholder
+    const prevIntervalAdded = filteredIntervals[filteredIntervals.length - 1];
+    if (prevIntervalAdded && !addingAdjacent) {
+      filteredIntervals.push(interval);
+      addingAdjacent = true;
+    }
+  });
+  
+  // Return the filtered list of intervals, ensuring uniqueness
+  return [...new Set(filteredIntervals)].sort((a, b) => a.getTime() - b.getTime());
 };
 
 /**
  * Formats a time interval for display in the timeline
  */
-export const formatTimeInterval = (date: Date, scale: TimeScale): string => {
+export const formatTimeInterval = (date: Date, scale: TimeScale, isGap?: boolean): string => {
+  if (isGap) {
+    return "...";
+  }
+  
   switch (scale) {
     case 'day':
       return format(date, 'MMM d');
@@ -111,30 +177,6 @@ export const formatTimeInterval = (date: Date, scale: TimeScale): string => {
     default:
       return format(date, 'MMM d, yyyy');
   }
-};
-
-/**
- * Determines whether a commit falls within a specific time interval based on the scale
- */
-export const isCommitInInterval = (commitDate: string, intervalStart: Date, intervalEnd: Date, scale: TimeScale): boolean => {
-  const date = new Date(commitDate);
-  
-  // Get the start of the date unit based on scale for proper comparison
-  const commitDateStart = getScaleStart(date, scale);
-  
-  // For the day scale, use exact day comparison instead of ranges
-  if (scale === 'day') {
-    return isSameDay(commitDateStart, intervalStart);
-  }
-  
-  // For other scales, check if the commit falls within the correct interval
-  const intervalStartFormatted = getScaleStart(intervalStart, scale);
-  const nextIntervalStart = getScaleStart(intervalEnd, scale);
-  
-  return (
-    (isSameScalePeriod(date, intervalStart, scale)) || 
-    (isAfter(commitDateStart, intervalStartFormatted) && isBefore(commitDateStart, nextIntervalStart))
-  );
 };
 
 /**
@@ -208,7 +250,6 @@ export const getCommitIntervalIndex = (commitDate: Date, intervals: Date[], scal
         return i;
       }
     }
-    return -1;
   }
   
   // For other scales, find the correct interval by comparing the scale-specific periods
@@ -220,18 +261,24 @@ export const getCommitIntervalIndex = (commitDate: Date, intervals: Date[], scal
   
   // If we can't find an exact match, find the closest previous interval
   // This ensures commits are placed in the correct column
-  const commitTimeStart = getScaleStart(commitDate, scale);
-  for (let i = 1; i < intervals.length; i++) {
-    const currentIntervalStart = getScaleStart(intervals[i], scale);
-    const previousIntervalStart = getScaleStart(intervals[i-1], scale);
+  for (let i = 0; i < intervals.length - 1; i++) {
+    const currentInterval = intervals[i];
+    const nextInterval = intervals[i + 1];
     
-    if (isAfter(commitTimeStart, previousIntervalStart) && 
-        (isBefore(commitTimeStart, currentIntervalStart) || isSameScalePeriod(commitDate, intervals[i-1], scale))) {
-      return i - 1;
+    if (
+      (isAfter(commitDate, currentInterval) || isSameScalePeriod(commitDate, currentInterval, scale)) && 
+      isBefore(commitDate, nextInterval)
+    ) {
+      return i;
     }
   }
   
-  // If still no match (e.g., after the last interval), use the closest interval based on date
+  // If the date is after the last interval, place it in the last interval
+  if (isAfter(commitDate, intervals[intervals.length - 1])) {
+    return intervals.length - 1;
+  }
+  
+  // Default to the closest interval
   const commitTime = commitDate.getTime();
   let closestIndex = 0;
   let closestDiff = Math.abs(commitTime - intervals[0].getTime());
@@ -245,6 +292,41 @@ export const getCommitIntervalIndex = (commitDate: Date, intervals: Date[], scal
   }
   
   return closestIndex;
+};
+
+/**
+ * Determines if an interval represents a gap in the timeline
+ */
+export const isGapInterval = (interval: Date, allIntervals: Date[], scale: TimeScale): boolean => {
+  const index = allIntervals.findIndex(i => i.getTime() === interval.getTime());
+  if (index <= 0 || index >= allIntervals.length - 1) return false;
+  
+  const prevInterval = allIntervals[index - 1];
+  const expectedPrevInterval = getPreviousInterval(interval, scale);
+  
+  // If the previous interval in our list is not the expected previous interval
+  // based on the scale, then this represents a gap
+  return prevInterval.getTime() !== expectedPrevInterval.getTime();
+};
+
+/**
+ * Gets the previous interval based on scale
+ */
+const getPreviousInterval = (interval: Date, scale: TimeScale): Date => {
+  switch (scale) {
+    case 'day':
+      return addDays(interval, -1);
+    case 'week':
+      return addWeeks(interval, -1);
+    case 'month':
+      return addMonths(interval, -1);
+    case 'quarter':
+      return addMonths(interval, -3);
+    case 'year':
+      return addYears(interval, -1);
+    default:
+      return addDays(interval, -1);
+  }
 };
 
 /**
