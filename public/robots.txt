@@ -2,4 +2,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://chronocode.app/sitemap.xml
+Sitemap: https://chronocode.ai/sitemap.xml

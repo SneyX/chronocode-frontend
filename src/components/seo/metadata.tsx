@@ -20,7 +20,7 @@ const defaultMetadata = {
   defaultOgImage: '/og-image.png',
   defaultTwitterCard: 'summary_large_image' as const,
   defaultOgType: 'website' as const,
-  siteUrl: typeof window !== 'undefined' ? window.location.origin : '',
+  siteUrl: 'https://chronocode.ai',
 };
 
 const Metadata: React.FC<MetadataProps> = ({
@@ -40,7 +40,7 @@ const Metadata: React.FC<MetadataProps> = ({
     
   const pageDescription = description || defaultMetadata.defaultDescription;
   const pageOgImage = ogImage || defaultMetadata.defaultOgImage;
-  const pageUrl = canonicalUrl || (typeof window !== 'undefined' ? window.location.href : '');
+  const pageUrl = canonicalUrl || (typeof window !== 'undefined' ? window.location.href : defaultMetadata.siteUrl);
 
   return (
     <Helmet>
