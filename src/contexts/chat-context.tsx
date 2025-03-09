@@ -1,5 +1,5 @@
 
-import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import React, { createContext, useContext, useState, ReactNode } from 'react';
 
 interface ChatContextProps {
   isChatOpen: boolean;
@@ -10,7 +10,6 @@ interface ChatContextProps {
   setCurrentQuestion: (question: string | null) => void;
   isLoading: boolean;
   setIsLoading: (loading: boolean) => void;
-  resetChat: () => void;
 }
 
 const ChatContext = createContext<ChatContextProps | undefined>(undefined);
@@ -28,8 +27,7 @@ interface ChatProviderProps {
 }
 
 export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
-  // Set isChatOpen to true by default
-  const [isChatOpen, setIsChatOpen] = useState(true);
+  const [isChatOpen, setIsChatOpen] = useState(false);
   const [highlightedCommits, setHighlightedCommits] = useState<string[]>([]);
   const [currentQuestion, setCurrentQuestion] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -43,12 +41,6 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
       setCurrentQuestion(null);
     }
   };
-  
-  const resetChat = () => {
-    setHighlightedCommits([]);
-    setCurrentQuestion(null);
-    setIsLoading(false);
-  };
 
   return (
     <ChatContext.Provider
@@ -60,8 +52,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
         currentQuestion,
         setCurrentQuestion,
         isLoading,
-        setIsLoading,
-        resetChat
+        setIsLoading
       }}
     >
       {children}

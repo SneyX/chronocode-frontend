@@ -78,31 +78,18 @@ const SidebarChat: React.FC<SidebarChatProps> = ({
   className
 }) => {
   const { isChatOpen, toggleChat, setHighlightedCommits, setCurrentQuestion, isLoading, setIsLoading } = useChat();
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<Message[]>([
+    {
+      id: '1',
+      content: `Hi! I'm your repository assistant. Ask me about commits or development decisions in ${repoName || 'this repository'}.`,
+      sender: 'assistant',
+      timestamp: new Date()
+    }
+  ]);
   const [inputValue, setInputValue] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedCommits, setSelectedCommits] = useState<string[]>([]);
-  const [previousRepo, setPreviousRepo] = useState<string | undefined>(undefined);
-  
-  // Initialize messages when component mounts or when repoName changes
-  useEffect(() => {
-    if (repoName !== previousRepo) {
-      // Reset chat messages when navigating to a new repo
-      setMessages([
-        {
-          id: '1',
-          content: `Hi! I'm your repository assistant. Ask me about commits or development decisions in ${repoName || 'this repository'}.`,
-          sender: 'assistant',
-          timestamp: new Date()
-        }
-      ]);
-      setInputValue('');
-      setHighlightedCommits([]);
-      setCurrentQuestion(null);
-      setPreviousRepo(repoName);
-    }
-  }, [repoName, previousRepo, setHighlightedCommits, setCurrentQuestion]);
   
   useEffect(() => {
     if (messagesEndRef.current) {
