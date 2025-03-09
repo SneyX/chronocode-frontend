@@ -121,6 +121,17 @@ const SidebarChat: React.FC<SidebarChatProps> = ({
     return result;
   };
 
+  // Helper function to determine if this is the example repository
+  const isExampleRepository = () => {
+    // Check if this is the example repository based on specific characteristics
+    // The example repository either doesn't have a repo_id or has mock commits
+    // We can check for the presence of specific mock commit SHAs
+    const mockCommitShas = ['1', '2', '3', '6', '7', '8', '9'];
+    const hasMatchingCommits = commits.some(commit => mockCommitShas.includes(commit.sha));
+    
+    return hasMatchingCommits || !commits[0]?.repo_id || repoName === "Example Timeline";
+  };
+
   const handleSend = async () => {
     if (!inputValue.trim()) return;
     
@@ -137,46 +148,8 @@ const SidebarChat: React.FC<SidebarChatProps> = ({
     setIsLoading(true);
     
     try {
-      // Check if this is a real repository with an ID (not the example timeline)
-      const repoId = commits[0]?.repo_id;
-      
-      if (repoId) {
-        // This is a real repository, use the new endpoint
-        const result = await queryCommits(repoId, inputValue);
-        
-        if (result.response) {
-          // Map subcommits_ids to commit SHAs using the helper function
-          const commitShas = mapSubcommitIdsToCommitShas(result.subcommits_ids, commits);
-          
-          const botMessage: Message = {
-            id: (Date.now() + 1).toString(),
-            content: result.response,
-            sender: 'assistant',
-            relatedCommits: commitShas,
-            timestamp: new Date()
-          };
-          
-          setMessages(prev => [...prev, botMessage]);
-          setHighlightedCommits(commitShas);
-          
-          if (commitShas.length > 0) {
-            toast.success('Found relevant commits!', {
-              description: `Click 'View Commits' to see ${commitShas.length} related commits.`
-            });
-          }
-        } else {
-          // Handle empty response
-          const botMessage: Message = {
-            id: (Date.now() + 1).toString(),
-            content: `I couldn't find specific information about that in the repository.`,
-            sender: 'assistant',
-            timestamp: new Date()
-          };
-          
-          setMessages(prev => [...prev, botMessage]);
-          setHighlightedCommits([]);
-        }
-      } else {
+      // First check if this is the example repository
+      if (isExampleRepository()) {
         // This is the example timeline, use the mock responses
         // Simulate API delay
         await new Promise(resolve => setTimeout(resolve, 1500));
@@ -215,6 +188,57 @@ const SidebarChat: React.FC<SidebarChatProps> = ({
           const botMessage: Message = {
             id: (Date.now() + 1).toString(),
             content: `I couldn't find specific information about that in the repository. Try asking about authentication, performance, security, or user management features.`,
+            sender: 'assistant',
+            timestamp: new Date()
+          };
+          
+          setMessages(prev => [...prev, botMessage]);
+          setHighlightedCommits([]);
+        }
+      } else {
+        // This is a real repository, use the new endpoint
+        const repoId = commits[0]?.repo_id;
+        
+        if (repoId) {
+          const result = await queryCommits(repoId, inputValue);
+          
+          if (result.response) {
+            // Map subcommits_ids to commit SHAs using the helper function
+            const commitShas = mapSubcommitIdsToCommitShas(result.subcommits_ids, commits);
+            
+            const botMessage: Message = {
+              id: (Date.now() + 1).toString(),
+              content: result.response,
+              sender: 'assistant',
+              relatedCommits: commitShas,
+              timestamp: new Date()
+            };
+            
+            setMessages(prev => [...prev, botMessage]);
+            setHighlightedCommits(commitShas);
+            
+            if (commitShas.length > 0) {
+              toast.success('Found relevant commits!', {
+                description: `Click 'View Commits' to see ${commitShas.length} related commits.`
+              });
+            }
+          } else {
+            // Handle empty response
+            const botMessage: Message = {
+              id: (Date.now() + 1).toString(),
+              content: `I couldn't find specific information about that in the repository.`,
+              sender: 'assistant',
+              timestamp: new Date()
+            };
+            
+            setMessages(prev => [...prev, botMessage]);
+            setHighlightedCommits([]);
+          }
+        } else {
+          // No repo ID found, show error
+          const botMessage: Message = {
+            id: (Date.now() + 1).toString(),
+            content: `Sorry, I couldn't identify this repository. Please try again later.`,
             sender: 'assistant',
             timestamp: new Date()
           };
@@ -264,51 +288,13 @@ const SidebarChat: React.FC<SidebarChatProps> = ({
     setIsLoading(true);
     
     try {
-      // Check if this is a real repository with an ID (not the example timeline)
-      const repoId = commits[0]?.repo_id;
-      
-      if (repoId) {
-        // This is a real repository, use the new endpoint
-        const result = await queryCommits(repoId, question);
-        
-        if (result.response) {
-          // Map subcommits_ids to commit SHAs using the helper function
-          const commitShas = mapSubcommitIdsToCommitShas(result.subcommits_ids, commits);
-          
-          const botMessage: Message = {
-            id: (Date.now() + 1).toString(),
-            content: result.response,
-            sender: 'assistant',
-            relatedCommits: commitShas,
-            timestamp: new Date()
-          };
-          
-          setMessages(prev => [...prev, botMessage]);
-          setHighlightedCommits(commitShas);
-          
-          if (commitShas.length > 0) {
-            toast.success('Found relevant commits!', {
-              description: `Click 'View Commits' to see ${commitShas.length} related commits.`
-            });
-          }
-        } else {
-          // Handle empty response
-          const botMessage: Message = {
-            id: (Date.now() + 1).toString(),
-            content: `I couldn't find specific information about that in the repository.`,
-            sender: 'assistant',
-            timestamp: new Date()
-          };
-          
-          setMessages(prev => [...prev, botMessage]);
-          setHighlightedCommits([]);
-        }
-      } else {
-        // This is the example timeline, use the predefined responses
+      // First check if this is the example repository
+      if (isExampleRepository()) {
+        // This is the example timeline, use the predefined responses with the original behavior
         // Simulate API delay
         await new Promise(resolve => setTimeout(resolve, 1000));
         
-        // Add assistant message with predefined response
+        // Add assistant message with predefined response and predefined related commits
         const botMessage: Message = {
           id: (Date.now() + 1).toString(),
           content: response,
@@ -323,6 +309,57 @@ const SidebarChat: React.FC<SidebarChatProps> = ({
         toast.success('Found relevant commits!', {
           description: `Click 'View Commits' to see ${relatedCommits.length} related commits.`
         });
+      } else {
+        // This is a real repository, use the new endpoint
+        const repoId = commits[0]?.repo_id;
+        
+        if (repoId) {
+          const result = await queryCommits(repoId, question);
+          
+          if (result.response) {
+            // Map subcommits_ids to commit SHAs using the helper function
+            const commitShas = mapSubcommitIdsToCommitShas(result.subcommits_ids, commits);
+            
+            const botMessage: Message = {
+              id: (Date.now() + 1).toString(),
+              content: result.response,
+              sender: 'assistant',
+              relatedCommits: commitShas,
+              timestamp: new Date()
+            };
+            
+            setMessages(prev => [...prev, botMessage]);
+            setHighlightedCommits(commitShas);
+            
+            if (commitShas.length > 0) {
+              toast.success('Found relevant commits!', {
+                description: `Click 'View Commits' to see ${commitShas.length} related commits.`
+              });
+            }
+          } else {
+            // Handle empty response
+            const botMessage: Message = {
+              id: (Date.now() + 1).toString(),
+              content: `I couldn't find specific information about that in the repository.`,
+              sender: 'assistant',
+              timestamp: new Date()
+            };
+            
+            setMessages(prev => [...prev, botMessage]);
+            setHighlightedCommits([]);
+          }
+        } else {
+          // No repo ID found, show error
+          const botMessage: Message = {
+            id: (Date.now() + 1).toString(),
+            content: `Sorry, I couldn't identify this repository. Please try again later.`,
+            sender: 'assistant',
+            timestamp: new Date()
+          };
+          
+          setMessages(prev => [...prev, botMessage]);
+          setHighlightedCommits([]);
+        }
       }
     } catch (error) {
       console.error('Error querying commits:', error);
