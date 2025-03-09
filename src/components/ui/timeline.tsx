@@ -149,33 +149,35 @@ const Timeline: React.FC<TimelineProps> = ({
         </div>
       )}
       
-      <div className="flex-none bg-muted/30 border-b">
-        <div className="flex relative">
-          <div className={cn(
-            "sticky left-0 z-30 bg-background flex-none border-r",
-            isChatOpen ? "w-32" : "w-40"
-          )}>
-            <div className="h-full p-3 font-medium">Project</div>
-          </div>
-          <div className="flex overflow-x-auto">
-            {timeIntervals.map((interval, index) => (
-              <div 
-                key={index} 
-                className="border-r last:border-r-0 flex-none px-2 py-3 text-center text-xs font-medium"
-                style={{ width: columnWidth }}
-              >
-                {formatTimeInterval(interval, timeScale)}
+      <ScrollArea className="flex-grow h-full overflow-auto" ref={scrollAreaRef}>
+        <div className="min-w-fit relative">
+          {/* Timeline header with fixed-width columns */}
+          <div className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b">
+            <div className="flex">
+              <div className={cn(
+                "sticky left-0 z-50 bg-background flex-none border-r",
+                isChatOpen ? "w-32" : "w-40"
+              )}>
+                <div className="h-full p-3 font-medium">Project</div>
               </div>
-            ))}
+              <div className="flex">
+                {timeIntervals.map((interval, index) => (
+                  <div 
+                    key={index} 
+                    className="border-r last:border-r-0 flex-none px-2 py-3 text-center text-xs font-medium"
+                    style={{ width: columnWidth }}
+                  >
+                    {formatTimeInterval(interval, timeScale)}
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
-      
-      <ScrollArea className="flex-grow overflow-auto h-full" ref={scrollAreaRef}>
-        <div className="min-w-fit h-full relative">
+          
+          {/* Timeline rows */}
           {Object.entries(groupedCommits).map(([groupName, groupCommits], groupIndex) => (
             groupCommits.length > 0 && (
-              <div key={groupName} className="group/row w-fit">
+              <div key={groupName} className="group/row w-full">
                 <div className="flex relative">
                   <div className={cn(
                     "sticky left-0 z-40 bg-background/90 backdrop-blur-md p-3 font-medium border-r flex items-center",
@@ -236,12 +238,12 @@ const Timeline: React.FC<TimelineProps> = ({
                                   className={cn(
                                     'absolute top-1/2 transform -translate-y-1/2 h-8 w-8 rounded-full',
                                     'flex items-center justify-center transition-all duration-300',
-                                    'z-20 hover:z-50 hover:scale-125 hover:shadow-lg',
+                                    'z-10 hover:z-50 hover:scale-125 hover:shadow-lg',
                                     getCommitTypeColor(commitType),
                                     (selectedCommit === commit.sha || hoveredCommit === commit.sha) && 
-                                      'ring-2 ring-offset-2 ring-primary scale-125 z-50',
+                                      'ring-2 ring-offset-2 ring-primary scale-125 z-40',
                                     isCommitHighlighted && 
-                                      'ring-2 ring-offset-2 ring-yellow-400 scale-125 z-50 highlighted-commit animate-pulse'
+                                      'ring-2 ring-offset-2 ring-yellow-400 scale-125 z-30 highlighted-commit animate-pulse'
                                   )}
                                   style={{ left: `${leftPositionPx}px` }}
                                   onClick={() => onCommitSelect(commit.sha)}
@@ -313,7 +315,7 @@ const Timeline: React.FC<TimelineProps> = ({
                                   className={cn(
                                     'absolute top-1/2 transform -translate-y-1/2 h-9 w-9 rounded-full',
                                     'flex items-center justify-center transition-all duration-300',
-                                    'z-20 hover:z-50 hover:scale-125 hover:shadow-lg border-2',
+                                    'z-10 hover:z-50 hover:scale-125 hover:shadow-lg border-2',
                                     getCommitTypeColor(dominantType),
                                     hasHighlightedCommits && 
                                       'ring-2 ring-offset-2 ring-yellow-400 highlighted-commit animate-pulse'
