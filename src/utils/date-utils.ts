@@ -1,3 +1,4 @@
+
 import { format, parse, addDays, addWeeks, addMonths, addYears, differenceInDays, differenceInWeeks, differenceInMonths, differenceInYears, isBefore, isAfter, isSameDay, isSameWeek, isSameMonth, isSameQuarter, isSameYear, startOfDay, startOfWeek, startOfMonth, startOfQuarter, startOfYear, endOfDay, endOfWeek, endOfMonth, endOfQuarter, endOfYear, differenceInMilliseconds } from 'date-fns';
 import { TimeScale } from '@/types';
 
@@ -104,26 +105,72 @@ export const calculateTimeRange = (commits: { date: string }[], scale: TimeScale
 
 /**
  * Generates time intervals for the timeline, consolidating gaps
+ * and being smart about creating intervals only where needed
  */
 export const generateTimeIntervals = (start: Date, end: Date, scale: TimeScale, commits: { date: string }[] = []) => {
   const intervals = [];
-  let current = new Date(start);
   
   // Sort commits by date
   const sortedDates = [...commits]
     .map(commit => new Date(commit.date))
     .sort((a, b) => a.getTime() - b.getTime());
   
-  // Add the start date to the sorted dates if it's not already there
+  // Add the start and end dates if they're not already in the list
   if (sortedDates.length === 0 || start.getTime() !== sortedDates[0].getTime()) {
     sortedDates.unshift(start);
   }
   
-  // Add the end date to the sorted dates if it's not already there
   if (end.getTime() !== sortedDates[sortedDates.length - 1].getTime()) {
     sortedDates.push(end);
   }
   
+  // Function to get unique periods (years, months, etc.) in the date range
+  const getUniquePeriods = () => {
+    const periods = new Set<string>();
+    let current = new Date(start);
+    
+    while (current <= end) {
+      let periodKey = '';
+      
+      switch (scale) {
+        case 'day':
+          periodKey = format(current, 'yyyy-MM-dd');
+          current = addDays(current, 1);
+          break;
+        case 'week':
+          periodKey = `Week of ${format(current, 'yyyy-MM-dd')}`;
+          current = addWeeks(current, 1);
+          break;
+        case 'month':
+          periodKey = format(current, 'yyyy-MM');
+          current = addMonths(current, 1);
+          break;
+        case 'quarter':
+          const quarter = Math.floor(current.getMonth() / 3) + 1;
+          periodKey = `Q${quarter} ${format(current, 'yyyy')}`;
+          current = addMonths(current, 3);
+          break;
+        case 'year':
+          periodKey = format(current, 'yyyy');
+          current = addYears(current, 1);
+          break;
+      }
+      
+      periods.add(periodKey);
+    }
+    
+    return Array.from(periods);
+  };
+  
+  // For sparse timelines, get unique periods first
+  const uniquePeriods = getUniquePeriods();
+  
+  // Check if there are too many periods with no commits
+  // If more than 70% of periods have no commits, we should use gap consolidation
+  const shouldConsolidateGaps = commits.length > 0 && 
+    uniquePeriods.length > 5 && 
+    (commits.length / uniquePeriods.length) < 0.3;
+
   // Generate intervals, consolidating large gaps
   for (let i = 0; i < sortedDates.length - 1; i++) {
     const currentDate = sortedDates[i];
@@ -131,8 +178,8 @@ export const generateTimeIntervals = (start: Date, end: Date, scale: TimeScale, 
     
     intervals.push(new Date(currentDate));
     
-    // Check if there's a significant gap between this date and the next
-    if (isSignificantGap(currentDate, nextDate, scale)) {
+    // Check if there's a significant gap or if we're in consolidation mode
+    if (shouldConsolidateGaps && isSignificantGap(currentDate, nextDate, scale)) {
       // Add a consolidated "gap" interval
       intervals.push({
         isGap: true,
@@ -142,33 +189,41 @@ export const generateTimeIntervals = (start: Date, end: Date, scale: TimeScale, 
       });
       
       // Skip to the next date
-      current = new Date(nextDate);
+      continue;
     } else {
-      // Add regular intervals between the dates
-      current = new Date(currentDate);
+      // Add regular intervals between the dates based on the scale
+      let current = new Date(currentDate);
       
       while (current < nextDate) {
+        let next;
+        
         switch (scale) {
           case 'day':
-            current = addDays(current, 1);
+            next = addDays(current, 1);
             break;
           case 'week':
-            current = addWeeks(current, 1);
+            next = addWeeks(current, 1);
             break;
           case 'month':
-            current = addMonths(current, 1);
+            next = addMonths(current, 1);
             break;
           case 'quarter':
-            current = addMonths(current, 3);
+            next = addMonths(current, 3);
             break;
           case 'year':
-            current = addYears(current, 1);
+            next = addYears(current, 1);
             break;
+          default:
+            next = addDays(current, 1);
         }
         
-        if (current < nextDate) {
-          intervals.push(new Date(current));
+        // Check if we've reached or passed the next commit date
+        if (next >= nextDate) {
+          break;
         }
+        
+        intervals.push(new Date(next));
+        current = next;
       }
     }
   }

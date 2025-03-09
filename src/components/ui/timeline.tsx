@@ -178,6 +178,31 @@ const Timeline: React.FC<TimelineProps> = ({
     
   const sidebarWidth = isChatOpen ? 8 : 10; // rem units
 
+  // Deduplicate time intervals for display
+  const deduplicatedIntervals = useMemo(() => {
+    const result: Array<{index: number, interval: any, label: string}> = [];
+    let lastLabel = "";
+    
+    timeIntervals.forEach((interval, index) => {
+      const label = formatTimeInterval(interval, timeScale);
+      
+      // If this interval is a gap, always include it
+      if (interval.isGap) {
+        result.push({index, interval, label});
+        lastLabel = label;
+        return;
+      }
+      
+      // For regular intervals, only add if the label is different from the previous one
+      if (label !== lastLabel) {
+        result.push({index, interval, label});
+        lastLabel = label;
+      }
+    });
+    
+    return result;
+  }, [timeIntervals, timeScale]);
+
   return (
     <div className={cn(
       "w-full h-full flex flex-col bg-card rounded-lg border shadow-sm overflow-hidden",
@@ -205,10 +230,24 @@ const Timeline: React.FC<TimelineProps> = ({
               width: `${timelineWidth}px`
             }}
           >
-            {timeIntervals.map((interval, index) => {
+            {deduplicatedIntervals.map(({index, interval, label}) => {
               const hasCommits = intervalsWithCommits[index];
               const isGapInterval = interval.isGap;
-              const columnWidth = getColumnWidth(index);
+              
+              // Calculate width for this header - spans multiple columns if needed
+              let columnWidth = 0;
+              let nextDifferentLabelIndex = timeIntervals.findIndex((interval, i) => 
+                i > index && formatTimeInterval(interval, timeScale) !== label && !interval.isGap
+              );
+              
+              if (nextDifferentLabelIndex === -1) {
+                nextDifferentLabelIndex = timeIntervals.length;
+              }
+              
+              // Calculate the total width of all columns with the same label
+              for (let i = index; i < nextDifferentLabelIndex; i++) {
+                columnWidth += getColumnWidth(i);
+              }
               
               return (
                 <div 
@@ -222,10 +261,10 @@ const Timeline: React.FC<TimelineProps> = ({
                   {isGapInterval ? (
                     <div className="flex items-center justify-center gap-1">
                       <Calendar className="h-3 w-3" />
-                      <span>{formatTimeInterval(interval, timeScale)}</span>
+                      <span>{label}</span>
                     </div>
                   ) : (
-                    formatTimeInterval(interval, timeScale)
+                    label
                   )}
                 </div>
               );
