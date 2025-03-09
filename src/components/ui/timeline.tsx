@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
@@ -65,7 +64,6 @@ const Timeline: React.FC<TimelineProps> = ({
 
   const groupedCommits = groupCommits(commits, groupBy);
   
-  // Calculate which intervals have commits
   const intervalsWithCommits = useMemo(() => {
     const intervalHasCommits = new Array(timeIntervals.length).fill(false);
     
@@ -161,13 +159,11 @@ const Timeline: React.FC<TimelineProps> = ({
     }
   }, [highlightedCommits]);
 
-  // Adjust column width for intervals with and without commits
   const getColumnWidth = (index: number) => {
     const baseWidth = Math.max(80, Math.min(200, 1200 / timeIntervals.length));
     return intervalsWithCommits[index] ? baseWidth : Math.max(40, baseWidth * 0.6);
   };
   
-  // Calculate total timeline width based on dynamic column widths
   const timelineWidth = timeIntervals.reduce((total, _, index) => 
     total + getColumnWidth(index), 0);
     
@@ -190,7 +186,6 @@ const Timeline: React.FC<TimelineProps> = ({
         </div>
       )}
       
-      {/* Column Headers - Positioned above the timeline */}
       <div className="flex-none bg-muted/30 border-b relative">
         <div className="flex" style={{ marginLeft: `${sidebarWidth}rem` }}>
           <div 
@@ -208,7 +203,7 @@ const Timeline: React.FC<TimelineProps> = ({
                 <div 
                   key={index} 
                   className={cn(
-                    "flex-none px-2 py-3 text-center text-xs font-medium border-r last:border-r-0",
+                    "flex-none px-2 py-4 text-center text-xs font-medium border-r last:border-r-0",
                     !hasCommits && "bg-muted/20 text-muted-foreground"
                   )}
                   style={{ width: `${columnWidth}px` }}
@@ -270,7 +265,6 @@ const Timeline: React.FC<TimelineProps> = ({
                   </div>
                   
                   {clusterCommits(groupCommits, groupName).map((cluster) => {
-                    // Calculate left position based on dynamic column widths
                     let leftPosition = 0;
                     for (let i = 0; i < cluster.intervalIndex; i++) {
                       leftPosition += getColumnWidth(i);
