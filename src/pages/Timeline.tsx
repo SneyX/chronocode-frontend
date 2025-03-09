@@ -425,17 +425,7 @@ const TimelinePage: React.FC = () => {
           <h1 className="text-3xl font-bold animate-fade-in">
             {repoParam ? `Timeline: ${repoParam}` : 'Repository Timeline'}
           </h1>
-          
-          {repoParam && !isLoading && (
-            <Button 
-              onClick={handleRefreshAnalysis}
-              variant="outline"
-              className="animate-fade-in"
-            >
-              <RefreshCw className="mr-2 h-4 w-4" />
-              Refresh Analysis
-            </Button>
-          )}
+        
         </div>
         
         <div className="mb-8 animate-slide-down">
