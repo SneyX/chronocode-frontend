@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -166,31 +167,6 @@
 /* Container adjustments */
 .container {
   transition: padding-right 0.3s ease;
-}
-
-/* Enhanced ScrollArea styles */
-[data-radix-scroll-area-viewport] {
-  width: 100% !important;
-  height: 100% !important;
-}
-
-[data-orientation="horizontal"] {
-  cursor: pointer;
-}
-
-/* Make scrollbar thumb more visible and interactive */
-[data-orientation="horizontal"] [data-radix-scroll-area-thumb] {
-  height: 6px !important;
-  background-color: hsl(var(--primary) / 0.5) !important;
-  cursor: pointer;
-}
-
-[data-orientation="horizontal"] [data-radix-scroll-area-thumb]:hover {
-  background-color: hsl(var(--primary) / 0.7) !important;
-}
-
-[data-orientation="horizontal"] [data-radix-scroll-area-thumb]:active {
-  background-color: hsl(var(--primary)) !important;
 }
 
 /* Mobile-first design, will stack the chat from bottom */

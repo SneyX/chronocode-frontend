@@ -1,4 +1,4 @@
-import { format, parse, addDays, addWeeks, addMonths, addYears, differenceInDays, differenceInWeeks, differenceInMonths, differenceInYears, isBefore, isAfter, isSameDay, isSameWeek, isSameMonth, isSameQuarter, isSameYear, startOfDay, startOfWeek, startOfMonth, startOfQuarter, startOfYear, endOfDay, endOfWeek, endOfMonth, endOfQuarter, endOfYear, differenceInMilliseconds, subDays, subWeeks, subMonths, subYears } from 'date-fns';
+import { format, parse, addDays, addWeeks, addMonths, addYears, differenceInDays, differenceInWeeks, differenceInMonths, differenceInYears, isBefore, isAfter, isSameDay, isSameWeek, isSameMonth, isSameQuarter, isSameYear, startOfDay, startOfWeek, startOfMonth, startOfQuarter, startOfYear, endOfDay, endOfWeek, endOfMonth, endOfQuarter, endOfYear, differenceInMilliseconds } from 'date-fns';
 import { TimeScale } from '@/types';
 
 /**
@@ -15,7 +15,7 @@ export const formatDate = (dateString: string, formatString: string = 'MMM d, yy
 };
 
 /**
- * Calculates the time range for the timeline with proper padding
+ * Calculates the time range for the timeline
  */
 export const calculateTimeRange = (commits: { date: string }[], scale: TimeScale) => {
   if (!commits.length) return { start: new Date(), end: new Date() };
@@ -30,55 +30,29 @@ export const calculateTimeRange = (commits: { date: string }[], scale: TimeScale
   const lastCommitDate = new Date(sortedCommits[sortedCommits.length - 1].date);
 
   // Add padding to the start and end dates based on scale
-  let start: Date, end: Date;
+  let start = firstCommitDate;
+  let end = lastCommitDate;
 
   switch (scale) {
     case 'day':
-      start = subDays(firstCommitDate, 3);
-      end = addDays(lastCommitDate, 3);
+      start = addDays(firstCommitDate, -1);
+      end = addDays(lastCommitDate, 1);
       break;
     case 'week':
-      start = subWeeks(firstCommitDate, 1);
-      end = addWeeks(lastCommitDate, 1);
+      start = addDays(firstCommitDate, -7);
+      end = addDays(lastCommitDate, 7);
       break;
     case 'month':
-      start = subMonths(firstCommitDate, 1);
+      start = addMonths(firstCommitDate, -1);
       end = addMonths(lastCommitDate, 1);
       break;
     case 'quarter':
-      start = subMonths(firstCommitDate, 3);
+      start = addMonths(firstCommitDate, -3);
       end = addMonths(lastCommitDate, 3);
       break;
     case 'year':
-      start = subYears(firstCommitDate, 1);
+      start = addYears(firstCommitDate, -1);
       end = addYears(lastCommitDate, 1);
-      break;
-    default:
-      start = subWeeks(firstCommitDate, 1);
-      end = addWeeks(lastCommitDate, 1);
-  }
-
-  // Ensure we get clean intervals by snapping to the start/end of the appropriate period
-  switch (scale) {
-    case 'day':
-      start = startOfDay(start);
-      end = endOfDay(end);
-      break;
-    case 'week':
-      start = startOfWeek(start);
-      end = endOfWeek(end);
-      break;
-    case 'month':
-      start = startOfMonth(start);
-      end = endOfMonth(end);
-      break;
-    case 'quarter':
-      start = startOfQuarter(start);
-      end = endOfQuarter(end);
-      break;
-    case 'year':
-      start = startOfYear(start);
-      end = endOfYear(end);
       break;
   }
 
@@ -242,42 +216,37 @@ export const calculateCommitPosition = (
   scale: TimeScale,
   intervals: Date[]
 ): number => {
+  // Find which interval the commit falls into
+  const intervalIndex = getCommitIntervalIndex(commitDate, intervals, scale);
+  
+  // Ensure we don't go out of bounds
+  if (intervalIndex < 0) return 0;
+  if (intervalIndex >= intervals.length - 1) return 100;
+  
+  // Calculate the interval width as percentage
+  const intervalWidth = 100 / (intervals.length - 1);
+  
+  // Get the actual date and interval boundaries for precise positioning
   const date = new Date(commitDate);
+  const intervalStart = getScaleStart(intervals[intervalIndex], scale);
+  const intervalEnd = getScaleEnd(intervals[intervalIndex], scale);
   
-  // If we have intervals, use them for more accurate positioning
-  if (intervals.length > 1) {
-    // Find which interval the commit falls into
-    for (let i = 0; i < intervals.length - 1; i++) {
-      const start = intervals[i];
-      const end = intervals[i + 1];
-      
-      if ((date >= start && date < end) || (i === intervals.length - 2 && date >= start)) {
-        const intervalStart = getScaleStart(start, scale);
-        const intervalEnd = getScaleEnd(end, scale);
-        
-        // Calculate the position within the interval
-        const totalIntervalDuration = differenceInMilliseconds(intervalEnd, intervalStart);
-        const commitPosition = differenceInMilliseconds(date, intervalStart);
-        
-        // Calculate position percentage within the interval (0-100)
-        const percentageInInterval = Math.min(100, Math.max(0, 
-          totalIntervalDuration > 0 ? (commitPosition / totalIntervalDuration) * 100 : 50
-        ));
-        
-        // Map to overall timeline position
-        return i * (100 / (intervals.length - 1)) + 
-               (percentageInInterval * (100 / (intervals.length - 1)) / 100);
-      }
-    }
-  }
+  // Calculate the position as a percentage within the interval
+  const totalIntervalDuration = differenceInMilliseconds(intervalEnd, intervalStart);
+  const commitPositionInInterval = differenceInMilliseconds(date, intervalStart);
   
-  // Fallback to simple linear mapping
-  const totalDuration = differenceInMilliseconds(timeEnd, timeStart);
-  const commitPosition = differenceInMilliseconds(date, timeStart);
+  // Calculate percentage position within the interval (0-1)
+  const percentageWithinInterval = totalIntervalDuration > 0 
+    ? commitPositionInInterval / totalIntervalDuration 
+    : 0.5; // Default to middle if interval has no duration
   
-  return Math.min(100, Math.max(0, 
-    totalDuration > 0 ? (commitPosition / totalDuration) * 100 : 50
-  ));
+  // Clamp the percentage to stay within reasonable bounds (20%-80% of the column width)
+  const clampedPercentage = Math.max(0.2, Math.min(0.8, percentageWithinInterval));
+  
+  // Calculate final position
+  const position = intervalIndex * intervalWidth + (intervalWidth * clampedPercentage);
+  
+  return position;
 };
 
 /**
