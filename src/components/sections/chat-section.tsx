@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { MessageCircle, SendHorizontal, User, Bot, HelpCircle, GitCommit } from 'lucide-react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -20,7 +19,7 @@ const mockCommits: Commit[] = [
   {
     sha: '1',
     created_at: '2023-01-01T00:00:00Z',
-    repo_name: 'example/repo',
+    repo_id: 1,
     author: 'developer1',
     author_url: 'https://github.com/developer1',
     author_email: 'dev1@example.com',
@@ -30,9 +29,8 @@ const mockCommits: Commit[] = [
     description: 'Set up project structure and dependencies',
     commit_analyses: [
       {
-        id: '1',
+        id: 1,
         created_at: '2023-01-01T00:00:00Z',
-        repo_name: 'example/repo',
         title: 'Project Initialization',
         idea: 'Setting up the foundation for the project',
         description: 'Created basic structure with core dependencies',
@@ -45,7 +43,7 @@ const mockCommits: Commit[] = [
   {
     sha: '2',
     created_at: '2023-01-02T00:00:00Z',
-    repo_name: 'example/repo',
+    repo_id: 1,
     author: 'developer2',
     author_url: 'https://github.com/developer2',
     author_email: 'dev2@example.com',
@@ -55,9 +53,8 @@ const mockCommits: Commit[] = [
     description: 'Added login and registration functionality',
     commit_analyses: [
       {
-        id: '2',
+        id: 2,
         created_at: '2023-01-02T00:00:00Z',
-        repo_name: 'example/repo',
         title: 'Authentication Implementation',
         idea: 'Securing user access with a robust auth system',
         description: 'Implemented JWT-based authentication flow',
@@ -70,7 +67,7 @@ const mockCommits: Commit[] = [
   {
     sha: '3',
     created_at: '2023-01-03T00:00:00Z',
-    repo_name: 'example/repo',
+    repo_id: 1,
     author: 'developer1',
     author_url: 'https://github.com/developer1',
     author_email: 'dev1@example.com',
@@ -80,9 +77,8 @@ const mockCommits: Commit[] = [
     description: 'Improved password hashing and session management',
     commit_analyses: [
       {
-        id: '3',
+        id: 3,
         created_at: '2023-01-03T00:00:00Z',
-        repo_name: 'example/repo',
         title: 'Security Enhancements',
         idea: 'Strengthening authentication security measures',
         description: 'Upgraded password hashing and added brute force protection',
@@ -95,7 +91,7 @@ const mockCommits: Commit[] = [
   {
     sha: '6',
     created_at: '2023-01-06T00:00:00Z',
-    repo_name: 'example/repo',
+    repo_id: 1,
     author: 'developer3',
     author_url: 'https://github.com/developer3',
     author_email: 'dev3@example.com',
@@ -105,9 +101,8 @@ const mockCommits: Commit[] = [
     description: 'Resolved issues with auth token refresh and expired sessions',
     commit_analyses: [
       {
-        id: '6',
+        id: 6,
         created_at: '2023-01-06T00:00:00Z',
-        repo_name: 'example/repo',
         title: 'Auth Bug Fixes',
         idea: 'Resolving edge cases in authentication flow',
         description: 'Fixed token refresh mechanism and session handling',
@@ -120,7 +115,7 @@ const mockCommits: Commit[] = [
   {
     sha: '7',
     created_at: '2023-01-07T00:00:00Z',
-    repo_name: 'example/repo',
+    repo_id: 1,
     author: 'developer2',
     author_url: 'https://github.com/developer2',
     author_email: 'dev2@example.com',
@@ -130,9 +125,8 @@ const mockCommits: Commit[] = [
     description: 'Added input sanitization and CSP headers',
     commit_analyses: [
       {
-        id: '7',
+        id: 7,
         created_at: '2023-01-07T00:00:00Z',
-        repo_name: 'example/repo',
         title: 'Security Improvements',
         idea: 'Preventing XSS attacks with robust protection',
         description: 'Implemented input validation and content security policy',
@@ -145,7 +139,7 @@ const mockCommits: Commit[] = [
   {
     sha: '8',
     created_at: '2023-01-08T00:00:00Z',
-    repo_name: 'example/repo',
+    repo_id: 1,
     author: 'developer1',
     author_url: 'https://github.com/developer1',
     author_email: 'dev1@example.com',
@@ -155,9 +149,8 @@ const mockCommits: Commit[] = [
     description: 'Improved query performance with indexes and caching',
     commit_analyses: [
       {
-        id: '8',
+        id: 8,
         created_at: '2023-01-08T00:00:00Z',
-        repo_name: 'example/repo',
         title: 'Performance Optimization',
         idea: 'Boosting application speed with efficient queries',
         description: 'Added database indexes and implemented query caching',
@@ -170,7 +163,7 @@ const mockCommits: Commit[] = [
   {
     sha: '9',
     created_at: '2023-01-09T00:00:00Z',
-    repo_name: 'example/repo',
+    repo_id: 1,
     author: 'developer3',
     author_url: 'https://github.com/developer3',
     author_email: 'dev3@example.com',
@@ -180,9 +173,8 @@ const mockCommits: Commit[] = [
     description: 'Final preparations for initial stable release',
     commit_analyses: [
       {
-        id: '9',
+        id: 9,
         created_at: '2023-01-09T00:00:00Z',
-        repo_name: 'example/repo',
         title: 'Stable Release',
         idea: 'Launching the first stable version of the application',
         description: 'Finalized documentation and version bumps for 1.0.0 release',

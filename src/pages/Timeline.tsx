@@ -14,7 +14,7 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft, Loader2, RefreshCw } from 'lucide-react';
 import { Commit, TimelineFilters, TimeScale, GroupBy } from '@/types';
 import { filterCommits } from '@/utils/filter-utils';
-import { fetchCommitsForRepo } from '@/lib/supabase';
+import { fetchCommitsForRepo, checkRepoExists } from '@/lib/supabase';
 import { useChat } from '@/contexts/chat-context';
 import { cn } from '@/lib/utils';
 
@@ -22,7 +22,7 @@ const mockCommits: Commit[] = [
   {
     sha: '1',
     created_at: '2023-05-10T10:00:00Z',
-    repo_name: 'owner/repo',
+    repo_id: 1,
     author: 'developer1',
     author_url: 'https://github.com/developer1',
     author_email: 'dev1@example.com',
@@ -32,9 +32,8 @@ const mockCommits: Commit[] = [
     description: 'Set up project structure and dependencies',
     commit_analises: [
       {
-        id: 'a1',
+        id: 1,
         created_at: '2023-05-10T11:00:00Z',
-        repo_name: 'owner/repo',
         title: 'Project Initialization',
         idea: 'Setting up the foundational structure for the project',
         description: 'This commit establishes the basic project structure, adding essential configuration files and dependencies needed to start development.',
@@ -47,7 +46,7 @@ const mockCommits: Commit[] = [
   {
     sha: '2',
     created_at: '2023-05-12T10:00:00Z',
-    repo_name: 'owner/repo',
+    repo_id: 2,
     author: 'developer2',
     author_url: 'https://github.com/developer2',
     author_email: 'dev2@example.com',
@@ -57,9 +56,8 @@ const mockCommits: Commit[] = [
     description: 'Implement user authentication with JWT',
     commit_analises: [
       {
-        id: 'a2',
+        id: 2,
         created_at: '2023-05-12T11:00:00Z',
-        repo_name: 'owner/repo',
         title: 'User Authentication System',
         idea: 'Implementing secure user authentication',
         description: 'This commit adds a complete authentication system using JWT tokens for secure user sessions. It includes login, registration, and password recovery functionality.',
@@ -72,7 +70,7 @@ const mockCommits: Commit[] = [
   {
     sha: '3',
     created_at: '2023-05-15T10:00:00Z',
-    repo_name: 'owner/repo',
+    repo_id: 3,
     author: 'developer1',
     author_url: 'https://github.com/developer1',
     author_email: 'dev1@example.com',
@@ -82,9 +80,8 @@ const mockCommits: Commit[] = [
     description: 'Improve error messages on login failure',
     commit_analises: [
       {
-        id: 'a3',
+        id: 3,
         created_at: '2023-05-15T11:00:00Z',
-        repo_name: 'owner/repo',
         title: 'Login Error Handling Improvement',
         idea: 'Enhancing user experience by providing clearer error messages',
         description: 'This commit improves the error handling during login attempts. It provides more specific error messages to help users understand why their login failed (invalid credentials, account locked, etc).',
@@ -97,7 +94,7 @@ const mockCommits: Commit[] = [
   {
     sha: '4',
     created_at: '2023-05-20T10:00:00Z',
-    repo_name: 'owner/repo',
+    repo_id: 4,
     author: 'developer3',
     author_url: 'https://github.com/developer3',
     author_email: 'dev3@example.com',
@@ -107,9 +104,8 @@ const mockCommits: Commit[] = [
     description: 'Create user profile page with edit functionality',
     commit_analises: [
       {
-        id: 'a4',
+        id: 4,
         created_at: '2023-05-20T11:00:00Z',
-        repo_name: 'owner/repo',
         title: 'User Profile Page Implementation',
         idea: 'Creating a comprehensive user profile management interface',
         description: 'This commit adds a complete user profile page where users can view and edit their personal information, including profile picture, contact details, and preferences.',
@@ -122,7 +118,7 @@ const mockCommits: Commit[] = [
   {
     sha: '5',
     created_at: '2023-05-25T10:00:00Z',
-    repo_name: 'owner/repo',
+    repo_id: 5,
     author: 'developer2',
     author_url: 'https://github.com/developer2',
     author_email: 'dev2@example.com',
@@ -132,9 +128,8 @@ const mockCommits: Commit[] = [
     description: 'Update all npm packages to latest versions',
     commit_analises: [
       {
-        id: 'a5',
+        id: 5,
         created_at: '2023-05-25T11:00:00Z',
-        repo_name: 'owner/repo',
         title: 'Dependency Update',
         idea: 'Maintaining project health by updating dependencies',
         description: 'This commit updates all npm packages to their latest versions to ensure the project has the latest features, performance improvements, and security patches.',
@@ -147,7 +142,7 @@ const mockCommits: Commit[] = [
   {
     sha: '6',
     created_at: '2023-06-01T10:00:00Z',
-    repo_name: 'owner/repo',
+    repo_id: 6,
     author: 'developer1',
     author_url: 'https://github.com/developer1',
     author_email: 'dev1@example.com',
@@ -157,9 +152,8 @@ const mockCommits: Commit[] = [
     description: 'Add functionality to check password strength during registration',
     commit_analises: [
       {
-        id: 'a6',
+        id: 6,
         created_at: '2023-06-01T11:00:00Z',
-        repo_name: 'owner/repo',
         title: 'Password Strength Validation',
         idea: 'Enhancing security by enforcing strong passwords',
         description: 'This commit adds a password strength checker during user registration to enforce strong password policies. It provides visual feedback to users about their password strength and specific suggestions for improvement.',
@@ -172,7 +166,7 @@ const mockCommits: Commit[] = [
   {
     sha: '7',
     created_at: '2023-06-05T10:00:00Z',
-    repo_name: 'owner/repo',
+    repo_id: 7,
     author: 'developer3',
     author_url: 'https://github.com/developer3',
     author_email: 'dev3@example.com',
@@ -182,9 +176,8 @@ const mockCommits: Commit[] = [
     description: 'Address XSS vulnerability in user input handling',
     commit_analises: [
       {
-        id: 'a7',
+        id: 7,
         created_at: '2023-06-05T11:00:00Z',
-        repo_name: 'owner/repo',
         title: 'XSS Vulnerability Fix',
         idea: 'Addressing a critical security vulnerability',
         description: 'This commit fixes a potential Cross-Site Scripting (XSS) vulnerability in the application by properly sanitizing user input and implementing appropriate content security policies.',
@@ -197,7 +190,7 @@ const mockCommits: Commit[] = [
   {
     sha: '8',
     created_at: '2023-06-10T10:00:00Z',
-    repo_name: 'owner/repo',
+    repo_id: 8,
     author: 'developer2',
     author_url: 'https://github.com/developer2',
     author_email: 'dev2@example.com',
@@ -207,9 +200,8 @@ const mockCommits: Commit[] = [
     description: 'Optimize database queries and implement caching',
     commit_analises: [
       {
-        id: 'a8',
+        id: 8,
         created_at: '2023-06-10T11:00:00Z',
-        repo_name: 'owner/repo',
         title: 'Performance Optimization',
         idea: 'Enhancing application speed and responsiveness',
         description: 'This commit significantly improves application performance by optimizing database queries, implementing a robust caching strategy, and reducing unnecessary computations in critical paths.',
@@ -222,7 +214,7 @@ const mockCommits: Commit[] = [
   {
     sha: '9',
     created_at: '2023-06-15T10:00:00Z',
-    repo_name: 'owner/repo',
+    repo_id: 9,
     author: 'developer1',
     author_url: 'https://github.com/developer1',
     author_email: 'dev1@example.com',
@@ -232,9 +224,8 @@ const mockCommits: Commit[] = [
     description: 'Prepare for initial production release',
     commit_analises: [
       {
-        id: 'a9',
+        id: 9,
         created_at: '2023-06-15T11:00:00Z',
-        repo_name: 'owner/repo',
         title: 'Version 1.0.0 Release',
         idea: 'First stable production release of the application',
         description: 'This commit marks the first production-ready release (v1.0.0) of the application. It includes final version bumps, documentation updates, and release notes for users.',
