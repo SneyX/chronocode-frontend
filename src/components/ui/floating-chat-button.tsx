@@ -1,9 +1,10 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { MessageCircle, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useChat } from '@/contexts/chat-context';
+import { useMobile } from '@/hooks/use-mobile';
 
 interface FloatingChatButtonProps {
   repoName?: string;
@@ -14,6 +15,21 @@ const FloatingChatButton: React.FC<FloatingChatButtonProps> = ({
   className,
 }) => {
   const { toggleChat, isChatOpen } = useChat();
+  const isMobile = useMobile();
+
+  // Add or remove body class for mobile scroll prevention
+  useEffect(() => {
+    if (isMobile && isChatOpen) {
+      document.body.classList.add('chat-open-mobile');
+    } else {
+      document.body.classList.remove('chat-open-mobile');
+    }
+    
+    // Clean up on unmount
+    return () => {
+      document.body.classList.remove('chat-open-mobile');
+    };
+  }, [isMobile, isChatOpen]);
 
   return (
     <Button
