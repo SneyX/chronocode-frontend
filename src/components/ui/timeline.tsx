@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
@@ -9,7 +8,6 @@ import {
   generateTimeIntervals, 
   formatTimeInterval, 
   calculateCommitPosition,
-  isCommitInInterval,
   getCommitIntervalIndex,
   formatDate,
   isGapInterval
@@ -59,13 +57,11 @@ const Timeline: React.FC<TimelineProps> = ({
   useEffect(() => {
     const range = calculateTimeRange(commits, timeScale);
     setTimeRange(range);
-    // Pass commits to the generateTimeIntervals function to filter out empty intervals
     setTimeIntervals(generateTimeIntervals(range.start, range.end, timeScale, commits));
   }, [commits, timeScale]);
 
   const groupedCommits = groupCommits(commits, groupBy);
   
-  // Calculate which intervals have commits
   const intervalsWithCommits = useMemo(() => {
     const intervalHasCommits = new Array(timeIntervals.length).fill(false);
     
@@ -126,7 +122,6 @@ const Timeline: React.FC<TimelineProps> = ({
     
     return Object.entries(positionMap).map(([key, groupedCommits]) => {
       const intervalIndex = parseInt(key, 10);
-      // Position is now based on intervalIndex directly as we've filtered intervals
       const position = intervalIndex * (100 / Math.max(1, timeIntervals.length - 1));
       
       return {
@@ -162,25 +157,21 @@ const Timeline: React.FC<TimelineProps> = ({
     }
   }, [highlightedCommits]);
 
-  // Adjust column width for different interval types
   const getColumnWidth = (index: number, isGap = false) => {
-    // For gap intervals, use a narrower width
     if (isGap) {
-      return 50; // Narrow width for gap columns
+      return 50;
     }
     
-    // For regular intervals with commits, use normal width
     const baseWidth = Math.max(80, Math.min(180, 1000 / timeIntervals.length));
     return intervalsWithCommits[index] ? baseWidth : baseWidth * 0.8;
   };
   
-  // Calculate total timeline width based on dynamic column widths
   const timelineWidth = timeIntervals.reduce((total, interval, index) => {
     const isGap = timeIntervals.length > 1 && isGapInterval(interval, timeIntervals, timeScale);
     return total + getColumnWidth(index, isGap);
   }, 0);
     
-  const sidebarWidth = isChatOpen ? 8 : 10; // rem units
+  const sidebarWidth = isChatOpen ? 8 : 10;
 
   return (
     <div className={cn(
@@ -199,7 +190,6 @@ const Timeline: React.FC<TimelineProps> = ({
         </div>
       )}
       
-      {/* Column Headers - Positioned above the timeline */}
       <div className="flex-none bg-muted/30 border-b relative">
         <div className="flex" style={{ marginLeft: `${sidebarWidth}rem` }}>
           <div 
@@ -236,7 +226,6 @@ const Timeline: React.FC<TimelineProps> = ({
         </div>
       </div>
       
-      {/* Empty spacing row to avoid overlap with header labels */}
       <div className="flex-none h-4 bg-muted/10 relative" style={{ marginLeft: `${sidebarWidth}rem` }}>
         <div 
           className="flex absolute h-full" 
@@ -316,7 +305,6 @@ const Timeline: React.FC<TimelineProps> = ({
                   </div>
                   
                   {clusterCommits(groupCommits, groupName).map((cluster) => {
-                    // Calculate left position based on dynamic column widths
                     let leftPosition = 0;
                     for (let i = 0; i < cluster.intervalIndex; i++) {
                       const isGap = timeIntervals.length > 1 && isGapInterval(timeIntervals[i], timeIntervals, timeScale);
