@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
@@ -84,12 +85,14 @@ const Timeline: React.FC<TimelineProps> = ({
     const positionMap: Record<number, Commit[]> = {};
     
     commits.forEach(commit => {
-      const commitDate = new Date(commit.date);
       const intervalIndex = getCommitIntervalIndex(commit.date, timeIntervals, timeScale);
       
+      // Calculate the exact position within the column
+      // Center the commit in the column by adding half the column width
       const position = intervalIndex * columnWidth + (columnWidth / 2);
       
-      const roundedPosition = Math.round(position / 3) * 3;
+      // Round position to avoid sub-pixel rendering issues
+      const roundedPosition = Math.round(position);
       
       if (!positionMap[roundedPosition]) {
         positionMap[roundedPosition] = [];
@@ -149,7 +152,7 @@ const Timeline: React.FC<TimelineProps> = ({
       <div className="relative flex-none bg-muted/30 border-b sticky top-0 z-20">
         <div className="flex">
           <div className={cn(
-            "bg-background/90 backdrop-blur-md border-r flex-shrink-0 z-30 sticky left-0",
+            "timeline-fixed-column",
             isChatOpen ? "w-32" : "w-40"
           )}></div>
           <div className="flex" style={{ minWidth: totalWidth }}>
@@ -173,7 +176,7 @@ const Timeline: React.FC<TimelineProps> = ({
               groupCommits.length > 0 && (
                 <div key={groupName} className="group/row flex">
                   <div className={cn(
-                    "bg-background/90 backdrop-blur-md p-3 font-medium border-r flex items-center z-30 flex-shrink-0 sticky left-0",
+                    "timeline-fixed-column p-3 font-medium flex items-center",
                     isChatOpen ? "w-32" : "w-40"
                   )}>
                     {groupBy === 'type' && (
@@ -212,6 +215,11 @@ const Timeline: React.FC<TimelineProps> = ({
                         const commitType = analysis?.type || 'CHORE';
                         const isCommitHighlighted = isHighlighted(commit.sha);
                         
+                        // Find which column this commit belongs to
+                        const intervalIndex = getCommitIntervalIndex(commit.date, timeIntervals, timeScale);
+                        // Calculate exact position within that column
+                        const colStartPosition = intervalIndex * columnWidth;
+                        
                         return (
                           <TooltipProvider key={commit.sha} delayDuration={200}>
                             <Tooltip>
@@ -227,7 +235,7 @@ const Timeline: React.FC<TimelineProps> = ({
                                     isCommitHighlighted && 
                                       'ring-2 ring-offset-2 ring-yellow-400 scale-125 z-30 highlighted-commit animate-pulse'
                                   )}
-                                  style={{ left: `${cluster.position}px` }}
+                                  style={{ left: `${colStartPosition + columnWidth/2}px` }}
                                   onClick={() => onCommitSelect(commit.sha)}
                                   onMouseEnter={() => setHoveredCommit(commit.sha)}
                                   onMouseLeave={() => setHoveredCommit(null)}
@@ -289,6 +297,11 @@ const Timeline: React.FC<TimelineProps> = ({
                           isHighlighted(commit.sha)
                         ).length;
                         
+                        // Find the column this cluster belongs to
+                        const firstCommitDate = cluster.commits[0].date;
+                        const intervalIndex = getCommitIntervalIndex(firstCommitDate, timeIntervals, timeScale);
+                        const colStartPosition = intervalIndex * columnWidth;
+                        
                         return (
                           <TooltipProvider key={`cluster-${cluster.position}`} delayDuration={200}>
                             <Tooltip>
@@ -302,7 +315,7 @@ const Timeline: React.FC<TimelineProps> = ({
                                     hasHighlightedCommits && 
                                       'ring-2 ring-offset-2 ring-yellow-400 highlighted-commit animate-pulse'
                                   )}
-                                  style={{ left: `${cluster.position}px` }}
+                                  style={{ left: `${colStartPosition + columnWidth/2}px` }}
                                   onClick={() => handleClusterClick(cluster)}
                                 >
                                   <Layers className="h-5 w-5" />
