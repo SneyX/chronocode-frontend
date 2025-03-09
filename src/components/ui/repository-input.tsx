@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -69,26 +68,31 @@ const RepositoryInput: React.FC<RepositoryInputProps> = ({
     }
   }, [searchValue, repos]);
 
-  // Progress simulation when analysis is running
+  useEffect(() => {
+    if (dropdownOpen && searchInputRef.current) {
+      const timerId = setTimeout(() => {
+        searchInputRef.current?.focus();
+      }, 50);
+      
+      return () => clearTimeout(timerId);
+    }
+  }, [dropdownOpen]);
+
   useEffect(() => {
     let intervalId: number;
     
     if (isAnalyzing && showAnalysisDialog) {
-      // Start with 5% to show immediate feedback
       setAnalysisProgress(5);
       
-      // Simulate gradual progress, but never reaching 100%
-      // The final 100% will be set when the analysis completes
       intervalId = window.setInterval(() => {
         setAnalysisProgress(current => {
           if (current >= 95) {
-            return 95; // Never automatically reach 100%
+            return 95;
           }
-          // Slower progress as we get closer to the end
           const increment = 100 - current > 50 ? 5 : 2;
           return current + increment;
         });
-      }, 5000); // Update every 5 seconds
+      }, 5000);
     }
     
     return () => {
@@ -113,7 +117,6 @@ const RepositoryInput: React.FC<RepositoryInputProps> = ({
   };
   
   const validateUrl = (url: string): boolean => {
-    // Basic validation to check if it's a GitHub repository URL
     const githubRegex = /^https?:\/\/(www\.)?github\.com\/[\w-]+\/[\w.-]+\/?.*$/;
     return githubRegex.test(url);
   };
@@ -140,7 +143,6 @@ const RepositoryInput: React.FC<RepositoryInputProps> = ({
     }
     
     try {
-      // Check if repo exists in Supabase before submitting
       setCheckingRepo(true);
       const exists = await checkRepoExists(repoName);
       setCheckingRepo(false);
@@ -148,28 +150,18 @@ const RepositoryInput: React.FC<RepositoryInputProps> = ({
       console.log('Repository exists:', exists);
       
       if (exists) {
-        // If repository already exists in Supabase, navigate to its timeline
         await onSubmit(url, repoName, exists);
       } else {
-        // Repository doesn't exist, we need to trigger analysis
         setShowAnalysisDialog(true);
         setIsAnalyzing(true);
         
         try {
-          // Start the repository analysis
           await analyzeRepository(url, token || undefined);
-          
-          // Set progress to 100% to indicate completion
           setAnalysisProgress(100);
-          
           toast.success('Repository analysis completed!');
-          
-          // Slight delay to show the 100% progress before closing
           setTimeout(() => {
             setShowAnalysisDialog(false);
             setIsAnalyzing(false);
-            
-            // Check if repo exists now after analysis
             checkRepoExists(repoName).then(nowExists => {
               if (nowExists) {
                 onSubmit(url, repoName, true);
@@ -218,7 +210,6 @@ const RepositoryInput: React.FC<RepositoryInputProps> = ({
   const cancelAnalysis = () => {
     setShowAnalysisDialog(false);
     setIsAnalyzing(false);
-    // Note: The backend will continue processing, but we won't wait for the result
     toast.info('Analysis will continue in the background');
   };
 
@@ -275,7 +266,6 @@ const RepositoryInput: React.FC<RepositoryInputProps> = ({
                     sideOffset={8}
                     onEscapeKeyDown={handleCloseDropdown}
                     onInteractOutside={(e) => {
-                      // Don't close dropdown if clicking on the search input
                       const target = e.target as Node;
                       if (searchInputRef.current && !searchInputRef.current.contains(target)) {
                         handleCloseDropdown();
@@ -290,13 +280,21 @@ const RepositoryInput: React.FC<RepositoryInputProps> = ({
                         placeholder="Search repositories..."
                         className="w-full h-9"
                         autoFocus
-                        // Prevent dropdown from closing when clicking the input
-                        onClick={(e) => e.stopPropagation()}
-                        // Prevent form submission when pressing Enter in search
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          e.currentTarget.focus();
+                        }}
                         onKeyDown={(e) => {
                           if (e.key === 'Enter') {
                             e.preventDefault();
                           }
+                          e.stopPropagation();
+                        }}
+                        onBlur={(e) => {
+                          e.preventDefault();
+                          setTimeout(() => {
+                            searchInputRef.current?.focus();
+                          }, 0);
                         }}
                       />
                     </div>
@@ -358,7 +356,6 @@ const RepositoryInput: React.FC<RepositoryInputProps> = ({
         </div>
       </form>
 
-      {/* Analysis Progress Dialog */}
       <Dialog open={showAnalysisDialog} onOpenChange={setShowAnalysisDialog}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
