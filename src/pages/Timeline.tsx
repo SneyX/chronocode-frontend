@@ -19,222 +19,7 @@ import { useChat } from '@/contexts/chat-context';
 import { cn } from '@/lib/utils';
 
 const mockCommits: Commit[] = [
-  {
-    sha: '1',
-    created_at: '2023-05-10T10:00:00Z',
-    repo_id: 1,
-    author: 'developer1',
-    author_url: 'https://github.com/developer1',
-    author_email: 'dev1@example.com',
-    date: '2023-05-10T10:00:00Z',
-    message: 'Initial commit',
-    url: 'https://github.com/owner/repo/commit/1',
-    description: 'Set up project structure and dependencies',
-    commit_analises: [
-      {
-        id: 1,
-        created_at: '2023-05-10T11:00:00Z',
-        title: 'Project Initialization',
-        idea: 'Setting up the foundational structure for the project',
-        description: 'This commit establishes the basic project structure, adding essential configuration files and dependencies needed to start development.',
-        commit_sha: '1',
-        type: 'MILESTONE',
-        epic: 'Project Setup'
-      }
-    ]
-  },
-  {
-    sha: '2',
-    created_at: '2023-05-12T10:00:00Z',
-    repo_id: 2,
-    author: 'developer2',
-    author_url: 'https://github.com/developer2',
-    author_email: 'dev2@example.com',
-    date: '2023-05-12T10:00:00Z',
-    message: 'Add authentication module',
-    url: 'https://github.com/owner/repo/commit/2',
-    description: 'Implement user authentication with JWT',
-    commit_analises: [
-      {
-        id: 2,
-        created_at: '2023-05-12T11:00:00Z',
-        title: 'User Authentication System',
-        idea: 'Implementing secure user authentication',
-        description: 'This commit adds a complete authentication system using JWT tokens for secure user sessions. It includes login, registration, and password recovery functionality.',
-        commit_sha: '2',
-        type: 'FEATURE',
-        epic: 'Authentication'
-      }
-    ]
-  },
-  {
-    sha: '3',
-    created_at: '2023-05-15T10:00:00Z',
-    repo_id: 3,
-    author: 'developer1',
-    author_url: 'https://github.com/developer1',
-    author_email: 'dev1@example.com',
-    date: '2023-05-15T10:00:00Z',
-    message: 'Fix login error handling',
-    url: 'https://github.com/owner/repo/commit/3',
-    description: 'Improve error messages on login failure',
-    commit_analises: [
-      {
-        id: 3,
-        created_at: '2023-05-15T11:00:00Z',
-        title: 'Login Error Handling Improvement',
-        idea: 'Enhancing user experience by providing clearer error messages',
-        description: 'This commit improves the error handling during login attempts. It provides more specific error messages to help users understand why their login failed (invalid credentials, account locked, etc).',
-        commit_sha: '3',
-        type: 'BUG',
-        epic: 'Authentication'
-      }
-    ]
-  },
-  {
-    sha: '4',
-    created_at: '2023-05-20T10:00:00Z',
-    repo_id: 4,
-    author: 'developer3',
-    author_url: 'https://github.com/developer3',
-    author_email: 'dev3@example.com',
-    date: '2023-05-20T10:00:00Z',
-    message: 'Add user profile page',
-    url: 'https://github.com/owner/repo/commit/4',
-    description: 'Create user profile page with edit functionality',
-    commit_analises: [
-      {
-        id: 4,
-        created_at: '2023-05-20T11:00:00Z',
-        title: 'User Profile Page Implementation',
-        idea: 'Creating a comprehensive user profile management interface',
-        description: 'This commit adds a complete user profile page where users can view and edit their personal information, including profile picture, contact details, and preferences.',
-        commit_sha: '4',
-        type: 'FEATURE',
-        epic: 'User Management'
-      }
-    ]
-  },
-  {
-    sha: '5',
-    created_at: '2023-05-25T10:00:00Z',
-    repo_id: 5,
-    author: 'developer2',
-    author_url: 'https://github.com/developer2',
-    author_email: 'dev2@example.com',
-    date: '2023-05-25T10:00:00Z',
-    message: 'Update dependencies',
-    url: 'https://github.com/owner/repo/commit/5',
-    description: 'Update all npm packages to latest versions',
-    commit_analises: [
-      {
-        id: 5,
-        created_at: '2023-05-25T11:00:00Z',
-        title: 'Dependency Update',
-        idea: 'Maintaining project health by updating dependencies',
-        description: 'This commit updates all npm packages to their latest versions to ensure the project has the latest features, performance improvements, and security patches.',
-        commit_sha: '5',
-        type: 'CHORE',
-        epic: 'Project Maintenance'
-      }
-    ]
-  },
-  {
-    sha: '6',
-    created_at: '2023-06-01T10:00:00Z',
-    repo_id: 6,
-    author: 'developer1',
-    author_url: 'https://github.com/developer1',
-    author_email: 'dev1@example.com',
-    date: '2023-06-01T10:00:00Z',
-    message: 'Implement password strength checker',
-    url: 'https://github.com/owner/repo/commit/6',
-    description: 'Add functionality to check password strength during registration',
-    commit_analises: [
-      {
-        id: 6,
-        created_at: '2023-06-01T11:00:00Z',
-        title: 'Password Strength Validation',
-        idea: 'Enhancing security by enforcing strong passwords',
-        description: 'This commit adds a password strength checker during user registration to enforce strong password policies. It provides visual feedback to users about their password strength and specific suggestions for improvement.',
-        commit_sha: '6',
-        type: 'FEATURE',
-        epic: 'Authentication'
-      }
-    ]
-  },
-  {
-    sha: '7',
-    created_at: '2023-06-05T10:00:00Z',
-    repo_id: 7,
-    author: 'developer3',
-    author_url: 'https://github.com/developer3',
-    author_email: 'dev3@example.com',
-    date: '2023-06-05T10:00:00Z',
-    message: 'Fix potential XSS vulnerability',
-    url: 'https://github.com/owner/repo/commit/7',
-    description: 'Address XSS vulnerability in user input handling',
-    commit_analises: [
-      {
-        id: 7,
-        created_at: '2023-06-05T11:00:00Z',
-        title: 'XSS Vulnerability Fix',
-        idea: 'Addressing a critical security vulnerability',
-        description: 'This commit fixes a potential Cross-Site Scripting (XSS) vulnerability in the application by properly sanitizing user input and implementing appropriate content security policies.',
-        commit_sha: '7',
-        type: 'WARNING',
-        epic: 'Security'
-      }
-    ]
-  },
-  {
-    sha: '8',
-    created_at: '2023-06-10T10:00:00Z',
-    repo_id: 8,
-    author: 'developer2',
-    author_url: 'https://github.com/developer2',
-    author_email: 'dev2@example.com',
-    date: '2023-06-10T10:00:00Z',
-    message: 'Improve application performance',
-    url: 'https://github.com/owner/repo/commit/8',
-    description: 'Optimize database queries and implement caching',
-    commit_analises: [
-      {
-        id: 8,
-        created_at: '2023-06-10T11:00:00Z',
-        title: 'Performance Optimization',
-        idea: 'Enhancing application speed and responsiveness',
-        description: 'This commit significantly improves application performance by optimizing database queries, implementing a robust caching strategy, and reducing unnecessary computations in critical paths.',
-        commit_sha: '8',
-        type: 'FEATURE',
-        epic: 'Performance'
-      }
-    ]
-  },
-  {
-    sha: '9',
-    created_at: '2023-06-15T10:00:00Z',
-    repo_id: 9,
-    author: 'developer1',
-    author_url: 'https://github.com/developer1',
-    author_email: 'dev1@example.com',
-    date: '2023-06-15T10:00:00Z',
-    message: 'Release v1.0.0',
-    url: 'https://github.com/owner/repo/commit/9',
-    description: 'Prepare for initial production release',
-    commit_analises: [
-      {
-        id: 9,
-        created_at: '2023-06-15T11:00:00Z',
-        title: 'Version 1.0.0 Release',
-        idea: 'First stable production release of the application',
-        description: 'This commit marks the first production-ready release (v1.0.0) of the application. It includes final version bumps, documentation updates, and release notes for users.',
-        commit_sha: '9',
-        type: 'MILESTONE',
-        epic: 'Releases'
-      }
-    ]
-  }
+  // ... keep existing mockCommits array
 ];
 
 const TimelinePage: React.FC = () => {
@@ -256,11 +41,14 @@ const TimelinePage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const repoParam = searchParams.get('repo');
   const exampleParam = searchParams.get('example');
-  const { isChatOpen } = useChat();
+  const { isChatOpen, resetChat } = useChat();
 
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
+      
+      resetChat();
+      
       try {
         if (repoParam) {
           console.log('Fetching data for repo:', repoParam, 'example:', exampleParam);
@@ -321,7 +109,7 @@ const TimelinePage: React.FC = () => {
     };
     
     fetchData();
-  }, [repoParam, exampleParam]);
+  }, [repoParam, exampleParam, resetChat]);
   
   useEffect(() => {
     setFilteredCommits(filterCommits(commits, filters));
@@ -329,6 +117,9 @@ const TimelinePage: React.FC = () => {
   
   const handleRepositorySubmit = async (url: string, repoName: string, repoExists = false) => {
     setIsLoading(true);
+    
+    resetChat();
+    
     try {
       console.log('Handling repository submit:', repoName, 'exists:', repoExists);
       

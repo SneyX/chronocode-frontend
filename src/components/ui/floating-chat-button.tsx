@@ -25,7 +25,7 @@ const FloatingChatButton: React.FC<FloatingChatButtonProps> = ({
         isChatOpen ? "bg-primary/90 text-primary-foreground rotate-90" : "bg-gradient-to-br from-violet-500 to-purple-700 border-2 border-purple-300/20",
         className
       )}
-      aria-label="Open chat assistant"
+      aria-label={isChatOpen ? "Close chat assistant" : "Open chat assistant"}
     >
       <MessageCircle className={cn("h-6 w-6", isChatOpen ? "rotate-180" : "")} />
     </Button>
