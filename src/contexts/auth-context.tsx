@@ -21,7 +21,7 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const GITHUB_CLIENT_ID = "YOUR_GITHUB_CLIENT_ID"; // Replace with your GitHub OAuth app client ID
+const GITHUB_CLIENT_ID = "Iv23ligkIkh0DejY8j8v"; // Hardcoded GitHub OAuth app client ID
 const REDIRECT_URI = window.location.origin;
 const BACKEND_URL = "http://127.0.0.1:8000";
 
