@@ -1,3 +1,4 @@
+
 import { format, parse, addDays, addWeeks, addMonths, addYears, differenceInDays, differenceInWeeks, differenceInMonths, differenceInYears, isBefore, isAfter, isSameDay, isSameWeek, isSameMonth, isSameQuarter, isSameYear, startOfDay, startOfWeek, startOfMonth, startOfQuarter, startOfYear, endOfDay, endOfWeek, endOfMonth, endOfQuarter, endOfYear, differenceInMilliseconds } from 'date-fns';
 import { TimeScale } from '@/types';
 
@@ -126,13 +127,13 @@ export const isCommitInInterval = (commitDate: string, intervalStart: Date, inte
     return isSameDay(commitDateStart, intervalStart);
   }
   
-  // For other scales, check if the commit falls within the interval
+  // For other scales, check if the commit falls within the correct interval
   const intervalStartFormatted = getScaleStart(intervalStart, scale);
-  const intervalEndFormatted = getScaleEnd(intervalEnd, scale);
+  const nextIntervalStart = getScaleStart(intervalEnd, scale);
   
   return (
-    (isAfter(commitDateStart, intervalStartFormatted) || isSameScalePeriod(date, intervalStart, scale)) && 
-    (isBefore(commitDateStart, intervalEndFormatted))
+    (isSameScalePeriod(date, intervalStart, scale)) || 
+    (isAfter(commitDateStart, intervalStartFormatted) && isBefore(commitDateStart, nextIntervalStart))
   );
 };
 
@@ -207,16 +208,30 @@ export const getCommitIntervalIndex = (commitDate: Date, intervals: Date[], scal
         return i;
       }
     }
-  } else {
-    // For other scales, check which interval the commit falls into
-    for (let i = 0; i < intervals.length - 1; i++) {
-      if (isCommitInInterval(commitDate.toISOString(), intervals[i], intervals[i + 1], scale)) {
-        return i;
-      }
+    return -1;
+  }
+  
+  // For other scales, find the correct interval by comparing the scale-specific periods
+  for (let i = 0; i < intervals.length; i++) {
+    if (isSameScalePeriod(commitDate, intervals[i], scale)) {
+      return i;
     }
   }
   
-  // If we can't find a match, try to determine the closest interval based on date
+  // If we can't find an exact match, find the closest previous interval
+  // This ensures commits are placed in the correct column
+  const commitTimeStart = getScaleStart(commitDate, scale);
+  for (let i = 1; i < intervals.length; i++) {
+    const currentIntervalStart = getScaleStart(intervals[i], scale);
+    const previousIntervalStart = getScaleStart(intervals[i-1], scale);
+    
+    if (isAfter(commitTimeStart, previousIntervalStart) && 
+        (isBefore(commitTimeStart, currentIntervalStart) || isSameScalePeriod(commitDate, intervals[i-1], scale))) {
+      return i - 1;
+    }
+  }
+  
+  // If still no match (e.g., after the last interval), use the closest interval based on date
   const commitTime = commitDate.getTime();
   let closestIndex = 0;
   let closestDiff = Math.abs(commitTime - intervals[0].getTime());

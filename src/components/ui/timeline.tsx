@@ -1,4 +1,5 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -63,6 +64,26 @@ const Timeline: React.FC<TimelineProps> = ({
   }, [commits, timeScale]);
 
   const groupedCommits = groupCommits(commits, groupBy);
+  
+  // Calculate which intervals have commits
+  const intervalsWithCommits = useMemo(() => {
+    const intervalHasCommits = new Array(timeIntervals.length).fill(false);
+    
+    commits.forEach(commit => {
+      const commitDate = new Date(commit.date);
+      const intervalIndex = getCommitIntervalIndex(
+        commitDate,
+        timeIntervals,
+        timeScale
+      );
+      
+      if (intervalIndex >= 0 && intervalIndex < intervalHasCommits.length) {
+        intervalHasCommits[intervalIndex] = true;
+      }
+    });
+    
+    return intervalHasCommits;
+  }, [commits, timeIntervals, timeScale]);
   
   const getCommitTypeIconComponent = (type: CommitType) => {
     switch (type) {
@@ -140,8 +161,16 @@ const Timeline: React.FC<TimelineProps> = ({
     }
   }, [highlightedCommits]);
 
-  const columnWidth = Math.max(80, Math.min(200, 1200 / timeIntervals.length));
-  const timelineWidth = columnWidth * timeIntervals.length;
+  // Adjust column width for intervals with and without commits
+  const getColumnWidth = (index: number) => {
+    const baseWidth = Math.max(80, Math.min(200, 1200 / timeIntervals.length));
+    return intervalsWithCommits[index] ? baseWidth : Math.max(40, baseWidth * 0.6);
+  };
+  
+  // Calculate total timeline width based on dynamic column widths
+  const timelineWidth = timeIntervals.reduce((total, _, index) => 
+    total + getColumnWidth(index), 0);
+    
   const sidebarWidth = isChatOpen ? 8 : 10; // rem units
 
   return (
@@ -161,6 +190,7 @@ const Timeline: React.FC<TimelineProps> = ({
         </div>
       )}
       
+      {/* Column Headers - Positioned above the timeline */}
       <div className="flex-none bg-muted/30 border-b relative">
         <div className="flex" style={{ marginLeft: `${sidebarWidth}rem` }}>
           <div 
@@ -170,15 +200,23 @@ const Timeline: React.FC<TimelineProps> = ({
               width: `${timelineWidth}px`
             }}
           >
-            {timeIntervals.map((interval, index) => (
-              <div 
-                key={index} 
-                className="flex-none px-2 py-3 text-center text-xs font-medium border-r last:border-r-0"
-                style={{ width: `${columnWidth}px` }}
-              >
-                {formatTimeInterval(interval, timeScale)}
-              </div>
-            ))}
+            {timeIntervals.map((interval, index) => {
+              const hasCommits = intervalsWithCommits[index];
+              const columnWidth = getColumnWidth(index);
+              
+              return (
+                <div 
+                  key={index} 
+                  className={cn(
+                    "flex-none px-2 py-3 text-center text-xs font-medium border-r last:border-r-0",
+                    !hasCommits && "bg-muted/20 text-muted-foreground"
+                  )}
+                  style={{ width: `${columnWidth}px` }}
+                >
+                  {formatTimeInterval(interval, timeScale)}
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>
@@ -213,20 +251,31 @@ const Timeline: React.FC<TimelineProps> = ({
               groupCommits.length > 0 && (
                 <div key={groupName} className="group/row border-b min-h-[80px] relative">
                   <div className="absolute inset-0 flex pointer-events-none">
-                    {timeIntervals.map((interval, index) => (
-                      <div 
-                        key={index}
-                        className={cn(
-                          "flex-none border-r last:border-r-0",
-                          index % 2 === 0 ? "bg-muted/5" : ""
-                        )}
-                        style={{ width: `${columnWidth}px` }}
-                      ></div>
-                    ))}
+                    {timeIntervals.map((interval, index) => {
+                      const hasCommits = intervalsWithCommits[index];
+                      const columnWidth = getColumnWidth(index);
+                      
+                      return (
+                        <div 
+                          key={index}
+                          className={cn(
+                            "flex-none border-r last:border-r-0",
+                            index % 2 === 0 ? "bg-muted/5" : "",
+                            !hasCommits && "bg-muted/10"
+                          )}
+                          style={{ width: `${columnWidth}px` }}
+                        ></div>
+                      );
+                    })}
                   </div>
                   
                   {clusterCommits(groupCommits, groupName).map((cluster) => {
-                    const leftPosition = (columnWidth * cluster.intervalIndex) + (columnWidth / 2);
+                    // Calculate left position based on dynamic column widths
+                    let leftPosition = 0;
+                    for (let i = 0; i < cluster.intervalIndex; i++) {
+                      leftPosition += getColumnWidth(i);
+                    }
+                    leftPosition += getColumnWidth(cluster.intervalIndex) / 2;
                     
                     if (cluster.commits.length === 1) {
                       const commit = cluster.commits[0];
