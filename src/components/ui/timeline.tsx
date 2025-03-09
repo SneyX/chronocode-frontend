@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
@@ -55,7 +54,6 @@ const Timeline: React.FC<TimelineProps> = ({
 
   const groupedCommits = groupCommits(commits, groupBy);
   
-  // Calculate column width based on time scale
   const getColumnWidth = () => {
     switch(timeScale) {
       case 'day': return 100;
@@ -68,7 +66,7 @@ const Timeline: React.FC<TimelineProps> = ({
   };
 
   const columnWidth = getColumnWidth();
-  const totalWidth = columnWidth * timeIntervals.length;
+  const totalWidth = Math.max(800, columnWidth * timeIntervals.length);
   
   const getCommitTypeIcon = (type: CommitType) => {
     switch (type) {
@@ -150,18 +148,22 @@ const Timeline: React.FC<TimelineProps> = ({
         </div>
       )}
       
-      <ScrollArea orientation="both" className="flex-grow h-full" ref={scrollAreaRef}>
-        <div className="min-w-fit h-full">
+      <ScrollArea 
+        orientation="both" 
+        className="flex-grow h-full w-full" 
+        ref={scrollAreaRef}
+      >
+        <div style={{ width: `${totalWidth}px`, minWidth: '100%' }}>
           <div className="sticky top-0 z-30 bg-background/95 backdrop-blur-sm border-b">
             <div className={cn(
               "flex",
               isChatOpen ? "pl-32" : "pl-40"
-            )} style={{ width: `${totalWidth}px` }}>
+            )}>
               {timeIntervals.map((interval, index) => (
                 <div 
                   key={index} 
                   className="border-r last:border-r-0 flex-none text-center py-3 px-2 text-xs font-medium"
-                  style={{ width: `${columnWidth}px` }}
+                  style={{ width: `${columnWidth}px`, minWidth: `${columnWidth}px` }}
                 >
                   {formatTimeInterval(interval, timeScale)}
                 </div>
@@ -189,7 +191,7 @@ const Timeline: React.FC<TimelineProps> = ({
                       <span className="truncate">{groupName}</span>
                     </div>
                     
-                    <div className="flex-grow relative flex border-b min-h-[80px] group-hover/row:bg-muted/10" style={{ width: `${totalWidth}px` }}>
+                    <div className="flex-grow relative flex border-b min-h-[80px] group-hover/row:bg-muted/10">
                       {timeIntervals.map((interval, index) => {
                         const isLastInterval = index === timeIntervals.length - 1;
                         return (
@@ -199,7 +201,7 @@ const Timeline: React.FC<TimelineProps> = ({
                               "flex-none relative", 
                               !isLastInterval && "border-r"
                             )}
-                            style={{ width: `${columnWidth}px` }}
+                            style={{ width: `${columnWidth}px`, minWidth: `${columnWidth}px` }}
                           >
                             <div className="absolute inset-0"></div>
                           </div>
