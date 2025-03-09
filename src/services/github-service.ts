@@ -1,5 +1,5 @@
 
-const BACKEND_URL = "http://127.0.0.1:8000";
+const BACKEND_URL = "https://backend-late-glitter-2411.fly.dev";
 
 export interface Repository {
   id: number;
@@ -15,7 +15,7 @@ export interface Repository {
 }
 
 export const getAuthenticatedUser = async (token: string) => {
-  const response = await fetch(`${BACKEND_URL}/github/user`, {
+  const response = await fetch(`${BACKEND_URL}/api/v1/github/user`, {
     headers: {
       'Authorization': `Bearer ${token}`
     }
@@ -29,7 +29,7 @@ export const getAuthenticatedUser = async (token: string) => {
 };
 
 export const getUserRepositories = async (token: string) => {
-  const response = await fetch(`${BACKEND_URL}/github/repos`, {
+  const response = await fetch(`${BACKEND_URL}/api/v1/github/repos`, {
     headers: {
       'Authorization': `Bearer ${token}`
     }
