@@ -1,5 +1,4 @@
-
-import { format, parse, addDays, addWeeks, addMonths, addYears, differenceInDays, differenceInWeeks, differenceInMonths, differenceInYears, isBefore, isAfter, isSameDay, isSameWeek, isSameMonth, isSameQuarter, isSameYear, startOfDay, startOfWeek, startOfMonth, startOfQuarter, startOfYear, endOfDay, endOfWeek, endOfMonth, endOfQuarter, endOfYear } from 'date-fns';
+import { format, parse, addDays, addWeeks, addMonths, addYears, differenceInDays, differenceInWeeks, differenceInMonths, differenceInYears, isBefore, isAfter, isSameDay, isSameWeek, isSameMonth, isSameQuarter, isSameYear, startOfDay, startOfWeek, startOfMonth, startOfQuarter, startOfYear, endOfDay, endOfWeek, endOfMonth, endOfQuarter, endOfYear, differenceInMilliseconds } from 'date-fns';
 import { TimeScale } from '@/types';
 
 /**
@@ -211,24 +210,43 @@ export const getCommitIntervalIndex = (commitDate: string, intervals: Date[], sc
  * Calculates the position of a commit on the timeline
  */
 export const calculateCommitPosition = (
-  commitDate: string,
+  commitDate: string, 
   timeStart: Date,
   timeEnd: Date,
   scale: TimeScale,
   intervals: Date[]
 ): number => {
-  // First, find which interval the commit falls into
+  // Find which interval the commit falls into
   const intervalIndex = getCommitIntervalIndex(commitDate, intervals, scale);
   
   // Ensure we don't go out of bounds
   if (intervalIndex < 0) return 0;
   if (intervalIndex >= intervals.length - 1) return 100;
   
-  // Calculate position as percentage based on interval
+  // Calculate the interval width as percentage
   const intervalWidth = 100 / (intervals.length - 1);
   
-  // Position at the center of the interval
-  return intervalIndex * intervalWidth + intervalWidth / 2;
+  // Get the actual date and interval boundaries for precise positioning
+  const date = new Date(commitDate);
+  const intervalStart = getScaleStart(intervals[intervalIndex], scale);
+  const intervalEnd = getScaleEnd(intervals[intervalIndex], scale);
+  
+  // Calculate the position as a percentage within the interval
+  const totalIntervalDuration = differenceInMilliseconds(intervalEnd, intervalStart);
+  const commitPositionInInterval = differenceInMilliseconds(date, intervalStart);
+  
+  // Calculate percentage position within the interval (0-1)
+  const percentageWithinInterval = totalIntervalDuration > 0 
+    ? commitPositionInInterval / totalIntervalDuration 
+    : 0.5; // Default to middle if interval has no duration
+  
+  // Clamp the percentage to stay within reasonable bounds (20%-80% of the column width)
+  const clampedPercentage = Math.max(0.2, Math.min(0.8, percentageWithinInterval));
+  
+  // Calculate final position
+  const position = intervalIndex * intervalWidth + (intervalWidth * clampedPercentage);
+  
+  return position;
 };
 
 /**

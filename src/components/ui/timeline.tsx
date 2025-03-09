@@ -1,10 +1,9 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Commit, TimeScale, GroupBy, CommitType } from '@/types';
-import { calculateTimeRange, generateTimeIntervals, formatTimeInterval, calculateCommitPosition, isCommitInInterval } from '@/utils/date-utils';
+import { calculateTimeRange, generateTimeIntervals, formatTimeInterval, calculateCommitPosition, isCommitInInterval, getCommitIntervalIndex } from '@/utils/date-utils';
 import { groupCommits, getCommitTypeColor } from '@/utils/filter-utils';
 import { GitCommit, Sparkles, AlertTriangle, Trophy, Bug, Wrench, Layers } from 'lucide-react';
 import { formatDate } from '@/utils/date-utils';
@@ -78,7 +77,7 @@ const Timeline: React.FC<TimelineProps> = ({
         timeIntervals
       );
       
-      const roundedPosition = Math.round(position);
+      const roundedPosition = Math.round(position / 3) * 3;
       
       if (!positionMap[roundedPosition]) {
         positionMap[roundedPosition] = [];
@@ -179,18 +178,16 @@ const Timeline: React.FC<TimelineProps> = ({
                         <div 
                           key={index} 
                           className={cn(
-                            "flex-1 relative", 
+                            "flex-1 relative min-w-[80px]", 
                             !isLastInterval && "border-r"
                           )}
                         >
-                          {/* Mark the interval boundary for visual reference */}
                           <div className="absolute inset-0"></div>
                         </div>
                       );
                     })}
                     
                     {clusterCommits(groupCommits, groupName).map((cluster) => {
-                      // Ensure position is constrained within the timeline
                       const clampedPosition = Math.max(0, Math.min(100, cluster.position));
                       
                       if (cluster.commits.length === 1) {
@@ -200,6 +197,8 @@ const Timeline: React.FC<TimelineProps> = ({
                         const commitType = analysis?.type || 'CHORE';
                         const isCommitHighlighted = isHighlighted(commit.sha);
                         
+                        const commitDate = new Date(commit.date);
+                        
                         return (
                           <TooltipProvider key={commit.sha} delayDuration={200}>
                             <Tooltip>
@@ -208,12 +207,12 @@ const Timeline: React.FC<TimelineProps> = ({
                                   className={cn(
                                     'absolute top-1/2 transform -translate-y-1/2 h-8 w-8 rounded-full',
                                     'flex items-center justify-center transition-all duration-300',
-                                    'z-10 hover:z-20 hover:scale-125 hover:shadow-lg',
+                                    'z-10 hover:z-30 hover:scale-125 hover:shadow-lg',
                                     getCommitTypeColor(commitType),
                                     (selectedCommit === commit.sha || hoveredCommit === commit.sha) && 
-                                      'ring-2 ring-offset-2 ring-primary scale-125 z-20',
+                                      'ring-2 ring-offset-2 ring-primary scale-125 z-30',
                                     isCommitHighlighted && 
-                                      'ring-2 ring-offset-2 ring-yellow-400 scale-125 z-20 highlighted-commit animate-pulse'
+                                      'ring-2 ring-offset-2 ring-yellow-400 scale-125 z-30 highlighted-commit animate-pulse'
                                   )}
                                   style={{ left: `${clampedPosition}%` }}
                                   onClick={() => onCommitSelect(commit.sha)}
@@ -285,7 +284,7 @@ const Timeline: React.FC<TimelineProps> = ({
                                   className={cn(
                                     'absolute top-1/2 transform -translate-y-1/2 h-9 w-9 rounded-full',
                                     'flex items-center justify-center transition-all duration-300',
-                                    'z-10 hover:z-20 hover:scale-125 hover:shadow-lg border-2',
+                                    'z-10 hover:z-30 hover:scale-125 hover:shadow-lg border-2',
                                     getCommitTypeColor(dominantType),
                                     hasHighlightedCommits && 
                                       'ring-2 ring-offset-2 ring-yellow-400 highlighted-commit animate-pulse'
