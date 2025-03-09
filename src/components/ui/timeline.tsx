@@ -233,7 +233,7 @@ const Timeline: React.FC<TimelineProps> = ({
                                   onMouseEnter={() => setHoveredCommit(commit.sha)}
                                   onMouseLeave={() => setHoveredCommit(null)}
                                 >
-                                  {getCommitTypeIcon(commitType)}
+                                  {getCommitTypeIconComponent(commitType)}
                                 </button>
                               </TooltipTrigger>
                               <TooltipContent 
@@ -381,7 +381,7 @@ const Timeline: React.FC<TimelineProps> = ({
                         'h-6 w-6 rounded-md flex items-center justify-center',
                         getCommitTypeColor(commitType)
                       )}>
-                        {getCommitTypeIcon(commitType)}
+                        {getCommitTypeIconComponent(commitType)}
                       </div>
                       <span className="font-medium">{analysis?.title || commit.message}</span>
                     </div>

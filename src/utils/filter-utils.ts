@@ -222,16 +222,16 @@ export const getCommitTypeColor = (type: CommitType): string => {
 };
 
 /**
- * Gets the commit type icon name
+ * Gets the commit type icon
  */
-export const getCommitTypeIcon = (type: CommitType): string => {
+export const getCommitTypeIcon = (type: CommitType) => {
   switch (type) {
     case 'FEATURE':
       return 'sparkles';
     case 'WARNING':
       return 'alert-triangle';
     case 'MILESTONE':
-      return 'milestone';
+      return 'trophy';
     case 'BUG':
       return 'bug';
     case 'CHORE':
