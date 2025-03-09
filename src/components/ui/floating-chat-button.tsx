@@ -4,7 +4,7 @@ import { MessageCircle, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useChat } from '@/contexts/chat-context';
-import { useMobile } from '@/hooks/use-mobile';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface FloatingChatButtonProps {
   repoName?: string;
@@ -15,7 +15,7 @@ const FloatingChatButton: React.FC<FloatingChatButtonProps> = ({
   className,
 }) => {
   const { toggleChat, isChatOpen } = useChat();
-  const isMobile = useMobile();
+  const isMobile = useIsMobile();
 
   // Add or remove body class for mobile scroll prevention
   useEffect(() => {

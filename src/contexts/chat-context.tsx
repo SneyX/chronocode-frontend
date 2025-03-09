@@ -1,6 +1,6 @@
 
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
-import { useMobile } from '@/hooks/use-mobile';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface ChatContextProps {
   isChatOpen: boolean;
@@ -28,7 +28,7 @@ interface ChatProviderProps {
 }
 
 export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
-  const isMobile = useMobile();
+  const isMobile = useIsMobile();
   
   // Set isChatOpen based on device - closed by default on mobile, open on desktop
   const [isChatOpen, setIsChatOpen] = useState(false);
