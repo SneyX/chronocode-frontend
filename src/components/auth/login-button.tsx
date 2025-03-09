@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { GitHubLogoIcon } from '@radix-ui/react-icons';
+import { Github } from 'lucide-react';
 import { useAuth } from '@/contexts/auth-context';
 
 interface LoginButtonProps {
@@ -25,7 +25,7 @@ const LoginButton: React.FC<LoginButtonProps> = ({ className }) => {
       className={className}
       onClick={login}
     >
-      <GitHubLogoIcon className="h-4 w-4 mr-2" />
+      <Github className="h-4 w-4 mr-2" />
       Login with GitHub
     </Button>
   );

@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/auth-context';
 import { getUserRepositories, Repository } from '@/services/github-service';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { StarIcon, GitForkIcon, LockClosedIcon } from 'lucide-react';
+import { Star, GitFork, Lock } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 
 const RepositoriesList: React.FC = () => {
@@ -95,7 +95,7 @@ const RepositoriesList: React.FC = () => {
                   {repo.name}
                 </a>
               </CardTitle>
-              {repo.private && <LockClosedIcon className="h-4 w-4 text-muted-foreground" />}
+              {repo.private && <Lock className="h-4 w-4 text-muted-foreground" />}
             </div>
             <CardDescription className="line-clamp-2 h-10">
               {repo.description || 'No description'}
@@ -107,11 +107,11 @@ const RepositoriesList: React.FC = () => {
           <CardFooter className="flex justify-between text-xs text-muted-foreground">
             <div className="flex items-center space-x-4">
               <div className="flex items-center">
-                <StarIcon className="h-3.5 w-3.5 mr-1" />
+                <Star className="h-3.5 w-3.5 mr-1" />
                 <span>{repo.stargazers_count}</span>
               </div>
               <div className="flex items-center">
-                <GitForkIcon className="h-3.5 w-3.5 mr-1" />
+                <GitFork className="h-3.5 w-3.5 mr-1" />
                 <span>{repo.forks_count}</span>
               </div>
             </div>
