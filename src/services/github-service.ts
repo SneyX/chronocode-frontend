@@ -44,17 +44,22 @@ export const getUserRepositories = async (token: string) => {
 
 export const analyzeRepository = async (repoUrl: string, token?: string) => {
   const headers: HeadersInit = {
-    'Content-Type': 'application/json'
+    'Content-Type': 'application/json',
+    'Authorization': 'CHRONOCODE123'
+  };
+  
+  const body: Record<string, string> = {
+    repository_url: repoUrl
   };
   
   if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
+    body.access_token = token;
   }
   
   const response = await fetch(`${BACKEND_URL}/api/v1/analyze-commits`, {
     method: 'POST',
     headers,
-    body: JSON.stringify({ repository_url: repoUrl })
+    body: JSON.stringify(body)
   });
   
   if (!response.ok) {
