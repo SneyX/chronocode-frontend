@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -9,6 +10,7 @@ import CommitCard from '@/components/ui/commit-card';
 import RepositoryInput from '@/components/ui/repository-input';
 import FloatingChatButton from '@/components/ui/floating-chat-button';
 import SidebarChat from '@/components/ui/sidebar-chat';
+import Metadata from '@/components/seo/metadata';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Loader2, RefreshCw } from 'lucide-react';
@@ -402,6 +404,12 @@ const TimelinePage: React.FC = () => {
 
   return (
     <div className="flex flex-col min-h-screen">
+      <Metadata 
+        title={repoParam ? `Timeline: ${repoParam}` : 'Repository Timeline'}
+        description={repoParam ? `Visualize the evolution of ${repoParam} repository with commit history, milestones, and key changes.` : 'Explore your repository timeline with intelligent visualization of commits and code evolution.'}
+        ogType="article"
+      />
+      
       <Header />
       
       <main className={cn("flex-grow container py-8", isChatOpen && "pr-[420px] transition-all duration-300")}>

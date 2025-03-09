@@ -6,6 +6,7 @@ import Header from '@/components/layout/header';
 import Footer from '@/components/layout/footer';
 import RepositoryInput from '@/components/ui/repository-input';
 import { Button } from '@/components/ui/button';
+import Metadata from '@/components/seo/metadata';
 import { 
   Sparkles, AlertTriangle, Trophy, Bug, Wrench, ArrowRight, 
   GitGraph, Search, MessageSquareText, FileCode, Brain, MessageCircleQuestion
@@ -57,6 +58,12 @@ const Index: React.FC = () => {
 
   return (
     <div className="flex flex-col min-h-screen">
+      <Metadata 
+        title="Home"
+        description="Visualize your codebase evolution with an intelligent timeline. Understand patterns, milestones, and key changes in your repository."
+        ogType="website"
+      />
+      
       <Header />
       
       <main className="flex-grow">
