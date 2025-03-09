@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
@@ -54,17 +53,6 @@ const Timeline: React.FC<TimelineProps> = ({
   }, [commits, timeScale]);
 
   const groupedCommits = groupCommits(commits, groupBy);
-  
-  // Calculate the column width based on timeScale
-  const getColumnWidth = (): string => {
-    switch(timeScale) {
-      case 'day': return '200px';
-      case 'week': return '180px';
-      case 'month': return '220px';
-      case 'year': return '250px';
-      default: return '200px';
-    }
-  };
   
   const getCommitTypeIcon = (type: CommitType) => {
     switch (type) {
@@ -129,9 +117,6 @@ const Timeline: React.FC<TimelineProps> = ({
     }
   }, [highlightedCommits]);
 
-  // Column width for fixed-size columns
-  const columnWidth = getColumnWidth();
-
   return (
     <div className={cn(
       "w-full h-full flex flex-col bg-card rounded-lg border shadow-sm overflow-hidden",
@@ -149,226 +134,208 @@ const Timeline: React.FC<TimelineProps> = ({
         </div>
       )}
       
-      <ScrollArea className="flex-grow h-full overflow-auto" ref={scrollAreaRef}>
-        <div className="min-w-fit relative">
-          {/* Timeline header with fixed-width columns */}
-          <div className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b">
-            <div className="flex">
-              <div className={cn(
-                "sticky left-0 z-50 bg-background flex-none border-r",
-                isChatOpen ? "w-32" : "w-40"
-              )}>
-                <div className="h-full p-3 font-medium">Project</div>
-              </div>
-              <div className="flex">
-                {timeIntervals.map((interval, index) => (
-                  <div 
-                    key={index} 
-                    className="border-r last:border-r-0 flex-none px-2 py-3 text-center text-xs font-medium"
-                    style={{ width: columnWidth }}
-                  >
-                    {formatTimeInterval(interval, timeScale)}
-                  </div>
-                ))}
-              </div>
+      <div className="flex-none bg-muted/30 border-b">
+        <div className={cn(
+          "flex",
+          isChatOpen ? "pl-32" : "pl-40"
+        )}>
+          {timeIntervals.map((interval, index) => (
+            <div 
+              key={index} 
+              className="flex-1 px-2 py-3 text-center text-xs font-medium border-r last:border-r-0"
+            >
+              {formatTimeInterval(interval, timeScale)}
             </div>
-          </div>
-          
-          {/* Timeline rows */}
-          <div className="overflow-visible">
-            {Object.entries(groupedCommits).map(([groupName, groupCommits], groupIndex) => (
-              groupCommits.length > 0 && (
-                <div key={groupName} className="group/row w-full">
-                  <div className="flex relative">
-                    <div className={cn(
-                      "sticky left-0 z-40 bg-background/90 backdrop-blur-md p-3 font-medium border-r flex items-center",
-                      isChatOpen ? "w-32" : "w-40"
-                    )}>
-                      {groupBy === 'type' && (
-                        <div className={cn(
-                          'h-6 w-6 mr-2 rounded-md flex items-center justify-center',
-                          getCommitTypeColor(groupName as CommitType)
-                        )}>
-                          {getCommitTypeIcon(groupName as CommitType)}
+          ))}
+        </div>
+      </div>
+      
+      <ScrollArea className="flex-grow h-full" ref={scrollAreaRef}>
+        <div className="min-w-fit h-full">
+          {Object.entries(groupedCommits).map(([groupName, groupCommits], groupIndex) => (
+            groupCommits.length > 0 && (
+              <div key={groupName} className="group/row">
+                <div className="flex sticky left-0 z-20">
+                  <div className={cn(
+                    "bg-background/90 backdrop-blur-md p-3 font-medium border-r flex items-center z-10",
+                    isChatOpen ? "w-32" : "w-40"
+                  )}>
+                    {groupBy === 'type' && (
+                      <div className={cn(
+                        'h-6 w-6 mr-2 rounded-md flex items-center justify-center',
+                        getCommitTypeColor(groupName as CommitType)
+                      )}>
+                        {getCommitTypeIcon(groupName as CommitType)}
+                      </div>
+                    )}
+                    <span className="truncate">{groupName}</span>
+                  </div>
+                  
+                  <div className="flex-grow relative flex border-b min-h-[80px] group-hover/row:bg-muted/10">
+                    {timeIntervals.map((interval, index) => {
+                      const isLastInterval = index === timeIntervals.length - 1;
+                      return (
+                        <div 
+                          key={index} 
+                          className={cn(
+                            "flex-1 relative min-w-[80px]", 
+                            !isLastInterval && "border-r"
+                          )}
+                        >
+                          <div className="absolute inset-0"></div>
                         </div>
-                      )}
-                      <span className="truncate">{groupName}</span>
-                    </div>
+                      );
+                    })}
                     
-                    <div className="flex relative border-b min-h-[80px] group-hover/row:bg-muted/10">
-                      {timeIntervals.map((interval, index) => {
-                        const isLastInterval = index === timeIntervals.length - 1;
-                        return (
-                          <div 
-                            key={index} 
-                            className={cn(
-                              "relative h-full flex-none", 
-                              !isLastInterval && "border-r"
-                            )}
-                            style={{ width: columnWidth }}
-                          >
-                            <div className="absolute inset-0"></div>
-                          </div>
-                        );
-                      })}
+                    {clusterCommits(groupCommits, groupName).map((cluster) => {
+                      const clampedPosition = Math.max(0, Math.min(100, cluster.position));
                       
-                      {clusterCommits(groupCommits, groupName).map((cluster) => {
-                        const clampedPosition = Math.max(0, Math.min(100, cluster.position));
+                      if (cluster.commits.length === 1) {
+                        const commit = cluster.commits[0];
+                        const analyses = commit.commit_analyses || commit.commit_analises || [];
+                        const analysis = analyses[0];
+                        const commitType = analysis?.type || 'CHORE';
+                        const isCommitHighlighted = isHighlighted(commit.sha);
                         
-                        // Calculate actual pixel position based on timeIntervals and columnWidth
-                        const intervalIndex = Math.floor(clampedPosition / 100 * timeIntervals.length);
-                        const positionWithinInterval = clampedPosition % (100 / timeIntervals.length) / (100 / timeIntervals.length) * 100;
+                        const commitDate = new Date(commit.date);
                         
-                        // Calculate the final absolute position
-                        const leftPositionPx = intervalIndex * parseInt(columnWidth) + (parseInt(columnWidth) * positionWithinInterval / 100);
-                        
-                        if (cluster.commits.length === 1) {
-                          const commit = cluster.commits[0];
-                          const analyses = commit.commit_analyses || commit.commit_analises || [];
-                          const analysis = analyses[0];
-                          const commitType = analysis?.type || 'CHORE';
-                          const isCommitHighlighted = isHighlighted(commit.sha);
-                          
-                          const commitDate = new Date(commit.date);
-                          
-                          return (
-                            <TooltipProvider key={commit.sha} delayDuration={200}>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <button
-                                    className={cn(
-                                      'absolute top-1/2 transform -translate-y-1/2 h-8 w-8 rounded-full',
-                                      'flex items-center justify-center transition-all duration-300',
-                                      'z-10 hover:z-50 hover:scale-125 hover:shadow-lg',
-                                      getCommitTypeColor(commitType),
-                                      (selectedCommit === commit.sha || hoveredCommit === commit.sha) && 
-                                        'ring-2 ring-offset-2 ring-primary scale-125 z-40',
-                                      isCommitHighlighted && 
-                                        'ring-2 ring-offset-2 ring-yellow-400 scale-125 z-30 highlighted-commit animate-pulse'
-                                    )}
-                                    style={{ left: `${leftPositionPx}px` }}
-                                    onClick={() => onCommitSelect(commit.sha)}
-                                    onMouseEnter={() => setHoveredCommit(commit.sha)}
-                                    onMouseLeave={() => setHoveredCommit(null)}
-                                  >
-                                    {getCommitTypeIcon(commitType)}
-                                  </button>
-                                </TooltipTrigger>
-                                <TooltipContent 
-                                  side="top" 
-                                  className="max-w-xs p-0 overflow-hidden z-50"
-                                  avoidCollisions={true}
-                                  collisionPadding={20}
-                                  sideOffset={12}
-                                >
-                                  <div className="p-3">
-                                    <p className="font-medium text-sm">{analysis?.title || commit.message}</p>
-                                    <p className="text-xs text-muted-foreground mt-1">
-                                      {commit.author} • {formatDate(commit.date)}
-                                    </p>
-                                  </div>
-                                  <Separator />
-                                  <div className="p-2 bg-muted/30 text-xs">
-                                    {analysis?.idea || commit.description?.substring(0, 100)}
-                                    {(analysis?.idea?.length || commit.description?.length) > 100 && '...'}
-                                  </div>
-                                  {isCommitHighlighted && (
-                                    <>
-                                      <Separator />
-                                      <div className="p-2 bg-yellow-100 dark:bg-yellow-900/30 text-xs">
-                                        <span className="font-semibold">Relevant to your question:</span> {currentQuestion}
-                                      </div>
-                                    </>
+                        return (
+                          <TooltipProvider key={commit.sha} delayDuration={200}>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <button
+                                  className={cn(
+                                    'absolute top-1/2 transform -translate-y-1/2 h-8 w-8 rounded-full',
+                                    'flex items-center justify-center transition-all duration-300',
+                                    'z-10 hover:z-30 hover:scale-125 hover:shadow-lg',
+                                    getCommitTypeColor(commitType),
+                                    (selectedCommit === commit.sha || hoveredCommit === commit.sha) && 
+                                      'ring-2 ring-offset-2 ring-primary scale-125 z-30',
+                                    isCommitHighlighted && 
+                                      'ring-2 ring-offset-2 ring-yellow-400 scale-125 z-30 highlighted-commit animate-pulse'
                                   )}
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
-                          );
-                        } else {
-                          const commitTypes = cluster.commits.map(commit => {
-                            const analyses = commit.commit_analyses || commit.commit_analises || [];
-                            return analyses[0]?.type || 'CHORE';
-                          });
-                          
-                          const mostCommonType = commitTypes.reduce(
-                            (acc, type) => {
-                              acc[type] = (acc[type] || 0) + 1;
-                              return acc;
-                            },
-                            {} as Record<string, number>
-                          );
-                          
-                          const dominantType = Object.entries(mostCommonType).sort((a, b) => b[1] - a[1])[0][0] as CommitType;
-                          
-                          const hasHighlightedCommits = cluster.commits.some(commit => 
-                            isHighlighted(commit.sha)
-                          );
-                          
-                          const highlightedCount = cluster.commits.filter(commit => 
-                            isHighlighted(commit.sha)
-                          ).length;
-                          
-                          return (
-                            <TooltipProvider key={`cluster-${cluster.position}`} delayDuration={200}>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <button
-                                    className={cn(
-                                      'absolute top-1/2 transform -translate-y-1/2 h-9 w-9 rounded-full',
-                                      'flex items-center justify-center transition-all duration-300',
-                                      'z-10 hover:z-50 hover:scale-125 hover:shadow-lg border-2',
-                                      getCommitTypeColor(dominantType),
-                                      hasHighlightedCommits && 
-                                        'ring-2 ring-offset-2 ring-yellow-400 highlighted-commit animate-pulse'
-                                    )}
-                                    style={{ left: `${leftPositionPx}px` }}
-                                    onClick={() => handleClusterClick(cluster)}
-                                  >
-                                    <Layers className="h-5 w-5" />
-                                    <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-primary text-white text-xs flex items-center justify-center font-bold">
-                                      {cluster.commits.length}
-                                    </span>
-                                    {hasHighlightedCommits && (
-                                      <span className="absolute -bottom-1 -right-1 h-5 w-5 rounded-full bg-yellow-400 text-black text-xs flex items-center justify-center font-bold">
-                                        {highlightedCount}
-                                      </span>
-                                    )}
-                                  </button>
-                                </TooltipTrigger>
-                                <TooltipContent 
-                                  side="top" 
-                                  className="max-w-xs p-0 overflow-hidden z-50"
-                                  avoidCollisions={true}
-                                  collisionPadding={20}
-                                  sideOffset={12}
+                                  style={{ left: `${clampedPosition}%` }}
+                                  onClick={() => onCommitSelect(commit.sha)}
+                                  onMouseEnter={() => setHoveredCommit(commit.sha)}
+                                  onMouseLeave={() => setHoveredCommit(null)}
                                 >
-                                  <div className="p-3">
-                                    <p className="font-medium text-sm">Commit Cluster</p>
-                                    <p className="text-xs text-muted-foreground mt-1">
-                                      Contains {cluster.commits.length} commits
+                                  {getCommitTypeIcon(commitType)}
+                                </button>
+                              </TooltipTrigger>
+                              <TooltipContent 
+                                side="top" 
+                                className="max-w-xs p-0 overflow-hidden z-50"
+                                avoidCollisions={true}
+                                collisionPadding={20}
+                                sideOffset={12}
+                              >
+                                <div className="p-3">
+                                  <p className="font-medium text-sm">{analysis?.title || commit.message}</p>
+                                  <p className="text-xs text-muted-foreground mt-1">
+                                    {commit.author} • {formatDate(commit.date)}
+                                  </p>
+                                </div>
+                                <Separator />
+                                <div className="p-2 bg-muted/30 text-xs">
+                                  {analysis?.idea || commit.description?.substring(0, 100)}
+                                  {(analysis?.idea?.length || commit.description?.length) > 100 && '...'}
+                                </div>
+                                {isCommitHighlighted && (
+                                  <>
+                                    <Separator />
+                                    <div className="p-2 bg-yellow-100 dark:bg-yellow-900/30 text-xs">
+                                      <span className="font-semibold">Relevant to your question:</span> {currentQuestion}
+                                    </div>
+                                  </>
+                                )}
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        );
+                      } else {
+                        const commitTypes = cluster.commits.map(commit => {
+                          const analyses = commit.commit_analyses || commit.commit_analises || [];
+                          return analyses[0]?.type || 'CHORE';
+                        });
+                        
+                        const mostCommonType = commitTypes.reduce(
+                          (acc, type) => {
+                            acc[type] = (acc[type] || 0) + 1;
+                            return acc;
+                          },
+                          {} as Record<string, number>
+                        );
+                        
+                        const dominantType = Object.entries(mostCommonType).sort((a, b) => b[1] - a[1])[0][0] as CommitType;
+                        
+                        const hasHighlightedCommits = cluster.commits.some(commit => 
+                          isHighlighted(commit.sha)
+                        );
+                        
+                        const highlightedCount = cluster.commits.filter(commit => 
+                          isHighlighted(commit.sha)
+                        ).length;
+                        
+                        return (
+                          <TooltipProvider key={`cluster-${cluster.position}`} delayDuration={200}>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <button
+                                  className={cn(
+                                    'absolute top-1/2 transform -translate-y-1/2 h-9 w-9 rounded-full',
+                                    'flex items-center justify-center transition-all duration-300',
+                                    'z-10 hover:z-30 hover:scale-125 hover:shadow-lg border-2',
+                                    getCommitTypeColor(dominantType),
+                                    hasHighlightedCommits && 
+                                      'ring-2 ring-offset-2 ring-yellow-400 highlighted-commit animate-pulse'
+                                  )}
+                                  style={{ left: `${clampedPosition}%` }}
+                                  onClick={() => handleClusterClick(cluster)}
+                                >
+                                  <Layers className="h-5 w-5" />
+                                  <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-primary text-white text-xs flex items-center justify-center font-bold">
+                                    {cluster.commits.length}
+                                  </span>
+                                  {hasHighlightedCommits && (
+                                    <span className="absolute -bottom-1 -right-1 h-5 w-5 rounded-full bg-yellow-400 text-black text-xs flex items-center justify-center font-bold">
+                                      {highlightedCount}
+                                    </span>
+                                  )}
+                                </button>
+                              </TooltipTrigger>
+                              <TooltipContent 
+                                side="top" 
+                                className="max-w-xs p-0 overflow-hidden z-50"
+                                avoidCollisions={true}
+                                collisionPadding={20}
+                                sideOffset={12}
+                              >
+                                <div className="p-3">
+                                  <p className="font-medium text-sm">Commit Cluster</p>
+                                  <p className="text-xs text-muted-foreground mt-1">
+                                    Contains {cluster.commits.length} commits
+                                  </p>
+                                </div>
+                                <Separator />
+                                <div className="p-2 bg-muted/30 text-xs">
+                                  Click to view all {cluster.commits.length} commits in this time period
+                                  {hasHighlightedCommits && (
+                                    <p className="mt-1 text-yellow-600 dark:text-yellow-400 font-medium">
+                                      {highlightedCount} relevant to your question
                                     </p>
-                                  </div>
-                                  <Separator />
-                                  <div className="p-2 bg-muted/30 text-xs">
-                                    Click to view all {cluster.commits.length} commits in this time period
-                                    {hasHighlightedCommits && (
-                                      <p className="mt-1 text-yellow-600 dark:text-yellow-400 font-medium">
-                                        {highlightedCount} relevant to your question
-                                      </p>
-                                    )}
-                                  </div>
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
-                          );
-                        }
-                      })}
-                    </div>
+                                  )}
+                                </div>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        );
+                      }
+                    })}
                   </div>
                 </div>
-              )
-            ))}
-          </div>
+              </div>
+            )
+          ))}
         </div>
       </ScrollArea>
 
