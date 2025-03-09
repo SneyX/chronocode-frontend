@@ -4,12 +4,17 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { GitBranch, Code, MenuIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/contexts/auth-context';
+import LoginButton from '@/components/ui/login-button';
+import UserMenu from '@/components/ui/user-menu';
 
 interface HeaderProps {
   className?: string;
 }
 
 const Header: React.FC<HeaderProps> = ({ className }) => {
+  const { isAuthenticated } = useAuth();
+
   return (
     <header className={cn(
       'w-full border-b bg-background/80 backdrop-blur-md sticky top-0 z-10',
@@ -24,6 +29,12 @@ const Header: React.FC<HeaderProps> = ({ className }) => {
         </Link>
         
         <div className="flex items-center space-x-4">
+          {isAuthenticated ? (
+            <UserMenu />
+          ) : (
+            <LoginButton variant="outline" size="sm" />
+          )}
+          
           <Button variant="outline" size="sm" className="hidden sm:flex items-center" asChild>
             <a href="https://github.com" target="_blank" rel="noopener noreferrer">
               <GitBranch className="h-4 w-4 mr-2" />
