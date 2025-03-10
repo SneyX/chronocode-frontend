@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -15,6 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { checkRepoExists, createEmbeddingSpace } from '@/lib/supabase';
 import FeaturesSection from '@/components/sections/features-section';
 import ChatSection from '@/components/sections/chat-section';
+import TeamSection from '@/components/sections/team-section';
 
 const Index: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -163,6 +163,9 @@ const Index: React.FC = () => {
             </div>
           </div>
         </section>
+        
+        {/* Team Section */}
+        <TeamSection />
         
         <section className="py-16 md:py-24 container">
           <div className="glass-morphism rounded-lg p-8 md:p-12 flex flex-col md:flex-row items-center justify-between">
