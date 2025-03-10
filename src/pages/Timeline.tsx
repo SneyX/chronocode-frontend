@@ -18,6 +18,7 @@ import { filterCommits } from '@/utils/filter-utils';
 import { fetchCommitsForRepo, checkRepoExists } from '@/lib/supabase';
 import { useChat } from '@/contexts/chat-context';
 import { cn } from '@/lib/utils';
+import RefreshButton from '@/components/ui/refresh-button';
 
 const mockCommits: Commit[] = [
   {
@@ -425,7 +426,14 @@ const TimelinePage: React.FC = () => {
           <h1 className="text-3xl font-bold animate-fade-in">
             {repoParam ? `Timeline: ${repoParam}` : 'Repository Timeline'}
           </h1>
-        
+          
+          {/* {repoParam && !isLoading && (
+            <RefreshButton 
+              repoName={repoParam}
+              onClick={handleRefreshAnalysis}
+              className="animate-fade-in"
+            />
+          )} */}
         </div>
         
         <div className="mb-8 animate-slide-down">

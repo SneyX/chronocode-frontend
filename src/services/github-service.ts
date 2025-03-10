@@ -90,3 +90,23 @@ export const queryCommits = async (repositoryId: number, query: string, k: numbe
   
   return response.json();
 };
+
+export const checkForNewCommits = async (repoName: string) => {
+  const response = await fetch(`${BACKEND_URL}/api/v1/check-new-commits`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'CHRONOCODE123'
+    },
+    body: JSON.stringify({
+      repository_name: repoName
+    })
+  });
+  
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({ detail: 'Unknown error' }));
+    throw new Error(errorData.detail || 'Failed to check for new commits');
+  }
+  
+  return response.json();
+};
