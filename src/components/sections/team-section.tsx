@@ -23,7 +23,7 @@ const TeamSection: React.FC = () => {
       role: 'Engineer',
       linkedinUrl: 'https://www.linkedin.com/in/octavio-pavon-ab914b210/',
       xUrl: 'https://x.com/octaviopvn1/',
-      imageUrl: 'https://media-eze1-1.cdn.whatsapp.net/v/t61.24694-24/437168281_1988067828336884_4249022644510620291_n.jpg?ccb=11-4&oh=01_Q5AaICniDuf7G-jXOlEgz3ZFJrfWoboGGsboUWbJ4gZBrFyG&oe=67DC0F54&_nc_sid=5e03e0&_nc_cat=101',
+      imageUrl: '/developers/octavio-pavon.jpg',
       initials: 'OP',
       quote: "Building tools that enhance developer productivity is my passion.",
       delay: 0
@@ -33,7 +33,7 @@ const TeamSection: React.FC = () => {
       role: 'Software Developer',
       linkedinUrl: 'https://www.linkedin.com/in/tiago-prelato-257787210/',
       xUrl: 'https://x.com/SneyX_',
-      imageUrl: 'https://media.licdn.com/dms/image/v2/D4D03AQEzrJlXrr-HFA/profile-displayphoto-shrink_800_800/profile-displayphoto-shrink_800_800/0/1706643760066?e=1747267200&v=beta&t=B9GlAdVrIqQ29pXRGmaiRNtrm7zTS-BsYXPhQumcmqA',
+      imageUrl: '/developers/tiago-prelato.jpg',
       initials: 'TP',
       quote: "I love creating elegant solutions to complex problems.",
       delay: 100
@@ -43,7 +43,7 @@ const TeamSection: React.FC = () => {
       role: 'Backend Developer',
       linkedinUrl: 'https://www.linkedin.com/in/octavio-kerbs/',
       xUrl: 'https://x.com/octokerbs',
-      imageUrl: 'https://media.licdn.com/dms/image/v2/D4D03AQEFA2yvA4RHDQ/profile-displayphoto-shrink_800_800/profile-displayphoto-shrink_800_800/0/1671566126552?e=1747267200&v=beta&t=6qiGXW0jofts7XlwScy1rl5eTdlY5m3QHUTEnQkEqyk',
+      imageUrl: '/developers/octavio-kerbs.jpg',
       initials: 'OK',
       quote: "Optimizing systems and building robust architectures drives me.",
       delay: 200
